@@ -1,0 +1,21 @@
+\begin{Verbatim}[baselinestretch=0.2]
+            |  ...  |
+            |  ...  |  caller values
+            |  ...  |
+            |       |
+            |       |  caller saved registers
+            |       |
+            |-------|
+      fp -> | oldfp |  address of the previous stack frame
+            |  ret  |  address to jump at after the function
+            |-------|
+            |       |
+            |       |  callee saved registers
+            |       |
+            |  ...  |
+            |  ...  |
+            |  ...  |  callee values
+      sp -> |       |
+            |       |
+            |       |
+\end{Verbatim}

@@ -1,0 +1,202 @@
+\documentclass[french, 12pt]{article}
+\usepackage[a4paper, top=2cm, bottom=2cm, left=2.5cm, right=2.5cm]{geometry}
+
+\usepackage{fancyvrb}
+
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{grammar}
+
+\usepackage[indent]{parskip}
+\usepackage{amssymb}
+\usepackage{calc}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\setlength {\marginparwidth }{2cm}
+
+\usepackage{todonotes}
+
+\pagenumbering{gobble}
+
+\begin{document}
+
+\section*{Syntaxe d'un fichier}
+Les commentaires commencent par \texttt{;} et s'étendent jusqu'à la fin de la ligne.
+
+Sections disponibles  :
+\begin{description}
+      \item[\texttt{.text}] signale le début d'une section d'instructions assembleur.
+      \item[\texttt{.data}] signale le début d'une section de déclarations de données.
+\end{description}
+
+
+Chaque instruction ou déclaration peut être localisée par un \emph{label} qui
+sera converti en une adresse par l'assembleur. Un label peut être composé des
+caractères suivants : \texttt{a}-\texttt{z}, \texttt{A}-\texttt{Z},
+\texttt{0}-\texttt{9} ou \texttt{\_}.
+
+
+On localise une instruction/déclaration à l'aide de la syntaxe :
+\begin{verbatim}
+label:
+      instruction ou déclaration
+\end{verbatim}
+
+
+On note que l'adressage de la mémoire se fait par mots de 32 bits (et pas moins !).
+Pour faire appel à des fonctions ou des sections définies dans un autre fichier
+on utilise la syntaxe suivante à n'importe quel endroit du fichier :
+\verb|.include file|. Dans ce cas, le code du fichier référencé est inséré
+à cette position.
+
+Les dossiers utilisés pour la recherche des fichiers à insérer est configurable
+via la ligne de commande.%
+%
+\todo{Quel flag ? À la GCC avec un \texttt{-I} ?}
+
+\section*{Données}
+
+\subsection*{Chaines de caractères}
+
+Les chaines de caractères sont composées des caractères suivants :
+\begin{itemize}
+      \item Les caractères ASCII affichable (codes $32$ à $126$ inclus).
+      \item Le caractère nul noté \verb|\0| (code $0$).
+      \item Le caractère d'appel noté \verb|\a| (code $7$).
+      \item Le caractère de tabulation noté \verb|\t| (code $9$).
+      \item Le caractère de saut de ligne noté \verb|\n| (code $10$).
+\end{itemize}
+
+\todo[inline]{Ajouter les caractères permettant de se déplacer dans le terminal ? Quid
+      de la gestion de \guillemetleft{}l'écran\guillemetright{} par le simulateur ?
+      Le \texttt{\textbackslash{}a} est là pour faire \emph{ding} :)}
+
+Les caractères \texttt{"} et les \texttt{\textbackslash} sont échappés :
+\texttt{\textbackslash{}"} pour le guillemet et
+\texttt{\textbackslash{}\textbackslash{}} pour la barre oblique inversée.
+Chaque caractère est codé sur $8$ bits, le bit de poids fort étant toujours
+fixé à $0$.
+
+Puisque les calculs ne peuvent s'opérer que sur des mots de $32$ bits, on encode
+les caractères par bloc de $4$, complété si besoin par plusieurs caractères nul,
+de la manière suivante :
+\begin{equation*}
+      \texttt{ab\textbackslash{}nc} \rightsquigarrow \texttt{01100001 01100010 00001010 01100011} \rightsquigarrow \overline{1633815139_{10}}
+\end{equation*}
+
+\todo[inline]{Vraiment, Vraiment pas pratique pour la manipulation des chaines...
+      Soit faire une stdlib poussée pour manipuler les chaines (concat, substr, getchr, ...)
+      Soit faire de l'adressage mémoire par octet : BadBadBad mal au cerveau.}
+
+\subsection*{Entiers}
+
+Les entiers peuvent être donnés dans plusieurs bases :
+\begin{itemize}
+      \item En base décimale, base par défaut.
+      \item En base binaire, lorsque préfixés par \texttt{0b}.
+      \item En base hexadécimale, lorsque préfixés par \texttt{0x}.
+\end{itemize}
+
+\subsection*{Déclaration des données}
+
+On utilise les notations suivantes pour déclarer des données :
+\begin{description}[leftmargin=!, labelwidth=\widthof{\bf \texttt{.string "..."}}]
+      \item[\texttt{.ascii "..."}] déclare une chaine de caractère.
+            Cette chaine n'est pas forcément terminée par \verb|\0|.
+      \item[\texttt{.string "..."}] déclare une chaine de caractère forcément
+            terminée par \verb|\0|.
+      \item[\texttt{.uint ...}] déclare un entier non signé sur $32$ bits (de $0$ à $2^{32}-1$).
+      \item[\texttt{.int ...}] déclare un entier signé sur $32$ bits (de $-2^{31}$ à $2^{31}-1$).
+\end{description}
+
+\section*{Instructions}
+
+\subsection*{Registres}
+
+L'assembleur possède $31$ registres de travail : de \texttt{r0} à \texttt{r28},
+\texttt{rout}, \texttt{sp}, \texttt{fp}. Les registres suivants ont un sens
+particulier :
+
+\begin{description}[leftmargin=!, labelwidth=\widthof{\bf \texttt{rout}}]
+      \item[\texttt{r0}] n'est pas modifiable et a comme valeur $0$.
+      \item[\texttt{r1}] n'est pas modifiable et a comme valeur $1$.
+      \item[\texttt{rout}] est supposé être utilisé afin de stocker la valeur de retour des fonctions.
+      \item[\texttt{sp}] a comme valeur la prochaine adresse libre du tas.
+      \item[\texttt{fp}] a comme valeur l'adresse du tableau d'activation de la fonction en cours.
+\end{description}
+
+\subsection*{Convention d'appel}
+
+La pile est organisée de cette manière lors d'un appel de fonction :
+\input{stack}
+
+Les arguments d'une fonction sont données dans les registres \texttt{r20} à \texttt{r28}.
+Les registres de \texttt{r15} à \texttt{r28} sont dits \emph{caller-saved} :
+une fonction est susceptible d'écraser la valeur de ces registres sans les restaurer.
+Les registres de \texttt{r0} à \texttt{r14} sont dits \emph{callee-saved} :
+lors de l'appel à une fonction, cette dernière ne doit pas modifier ces registres.
+
+\subsection*{Labels}
+
+Les \emph{labels} ne peuvent être déclarés qu'une seule fois sauf les
+\emph{labels} ayant un entier en base décimale comme identifiant. Dans ce cas,
+on fait référence au \emph{label} $N$ précédent par $N\texttt{b}$ et au label
+suivant par $N\texttt{f}$. La référence à un \emph{label} $N$ de manière directe
+n'est pas autorisée.
+
+\subsection*{Format des Sauts}
+
+Lors de saut les formats d'adresse suivants sont autorisés :
+\begin{itemize}
+      \item Saut à une adresse absolue. L'adresse est donnée sans signe dans
+            n'importe quelle base, préfixée de \verb|$|. Exemple :
+            \verb|jmp $12| saute à l'adresse $12$ du programme.
+      \item Saut à une adresse relative. L'adresse est donnée avec un signe
+            (\texttt{+} ou \texttt{-}) dans n'importe quelle base, préfixée de
+            \verb|$|. Exemple : \verb|jmp $+12| saute $12$ instruction après,
+            \verb|jmp $-12| saute $12$ instruction avant.
+      \item Saut à un \emph{label}. L'adresse absolue est calculée par
+            l'assembleur. Exemple : \verb|jmp lbl| saute au label \emph{lbl} du
+            programme.
+\end{itemize}
+
+\todo[inline]{
+      Vraiment pas pratique de gérer à la fois les labels ``numériques'' et les
+      sauts à des offsets... Pourquoi autoriser les offsets ? C'est bien les
+      labels.}
+
+\subsection*{Instructions}
+
+Les instructions sont données lignes par lignes. On notera $r$ un registre et
+$l$ un label défini.
+
+\subsubsection*{Instructions Logiques}
+
+\begin{itemize}
+      \item \verb|and| $r1$ $r2$ $r3$
+      \item \verb|or | $r1$ $r2$ $r3$
+      \item \verb|nor| $r1$ $r2$ $r3$
+      \item \verb|xor| $r1$ $r2$ $r3$
+      \item \verb|not| $r1$ $r2$
+\end{itemize}
+
+\subsubsection*{Instructions Arithmétiques}
+
+\begin{itemize}
+      \item \verb|add| $r1$ $r2$ $r3$
+      \item \verb|sub| $r1$ $r2$ $r3$
+      \item \verb|mul| $r1$ $r2$ $r3$
+      \item \verb|div| $r1$ $r2$ $r3$
+      \item \verb|neg| $r1$ $r2$
+      \item \verb|inc| $r1$ $r2$
+      \item \verb|dec| $r1$ $r2$
+\end{itemize}
+
+\subsubsection*{Décalages}
+
+% \begin{itemize}
+%       \item \verb|dec| $r1$ $r2$
+% \end{itemize}
+
+\end{document}
