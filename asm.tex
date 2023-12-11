@@ -12,7 +12,11 @@
 \usepackage{amssymb}
 \usepackage{calc}
 \usepackage{enumitem}
+\usepackage{array}
 \usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{booktabs}
+
 \setlength {\marginparwidth }{2cm}
 
 \usepackage{todonotes}
@@ -168,35 +172,78 @@ Lors de saut les formats d'adresse suivants sont autorisés :
 
 \subsection*{Instructions}
 
-Les instructions sont données lignes par lignes. On notera $r$ un registre et
-$l$ un label défini.
+\renewcommand\tabularxcolumn[1]{m{#1}}
+\newcolumntype{S}{ p{1cm} }
 
 \subsubsection*{Instructions Logiques}
-
-\begin{itemize}
-      \item \verb|and| $r1$ $r2$ $r3$
-      \item \verb|or | $r1$ $r2$ $r3$
-      \item \verb|nor| $r1$ $r2$ $r3$
-      \item \verb|xor| $r1$ $r2$ $r3$
-      \item \verb|not| $r1$ $r2$
-\end{itemize}
+\noindent
+\begin{tabularx}{\textwidth}{cccc S X}
+      \toprule
+      Instruction  & Destination & \multicolumn{2}{c}{Arguments} &      & Description                       \\
+      \midrule
+      \texttt{and} & $r1$        & $r2$                          & $r3$ &             & et logique          \\
+      \texttt{orr} & $r1$        & $r2$                          & $r3$ &             & ou logique          \\
+      \texttt{nor} & $r1$        & $r2$                          & $r3$ &             & non-ou logique      \\
+      \texttt{xor} & $r1$        & $r2$                          & $r3$ &             & ou exclusif logique \\
+      \texttt{not} & $r1$        & $r2$                          &      &             & non logique         \\
+      \bottomrule
+\end{tabularx}
 
 \subsubsection*{Instructions Arithmétiques}
 
-\begin{itemize}
-      \item \verb|add| $r1$ $r2$ $r3$
-      \item \verb|sub| $r1$ $r2$ $r3$
-      \item \verb|mul| $r1$ $r2$ $r3$
-      \item \verb|div| $r1$ $r2$ $r3$
-      \item \verb|neg| $r1$ $r2$
-      \item \verb|inc| $r1$ $r2$
-      \item \verb|dec| $r1$ $r2$
-\end{itemize}
+\noindent
+\begin{tabularx}{\textwidth}{cccc S X}
+      \toprule
+      Instruction  & Destination & \multicolumn{2}{c}{Arguments} &      & Description                  \\
+      \midrule
+      \texttt{add} & $r1$        & $r2$                          & $r3$ &             & addition       \\
+      \texttt{sub} & $r1$        & $r2$                          & $r3$ &             & soustraction   \\
+      \texttt{mul} & $r1$        & $r2$                          & $r3$ &             & multiplication \\
+      \texttt{div} & $r1$        & $r2$                          & $r3$ &             & division       \\
+      \texttt{neg} & $r1$        & $r2$                          &      &             & négation       \\
+      \texttt{inc} & $r1$        & $r2$                          &      &             & incrémente     \\
+      \texttt{dec} & $r1$        & $r2$                          &      &             & décrémente     \\
+      \bottomrule
+\end{tabularx}
 
 \subsubsection*{Décalages}
 
-% \begin{itemize}
-%       \item \verb|dec| $r1$ $r2$
-% \end{itemize}
+\noindent
+\begin{tabularx}{\textwidth}{ccc S X}
+      \toprule
+      Instruction  & Destination & Argument &  & Description                    \\
+      \midrule
+      \texttt{asr} & $r1$        & $r2$     &  & Décalage à droite arithmétique \\
+      \texttt{lsr} & $r1$        & $r2$     &  & Décalage à droite logique      \\
+      \texttt{lrl} & $r1$        & $r2$     &  & Décalage à gauche              \\
+      \bottomrule
+\end{tabularx}
+
+\subsubsection*{Opération sur le Tas}
+
+\noindent
+\begin{tabularx}{\textwidth}{ccc S X}
+      \toprule
+      Instruction   & Destination & Argument &  & Description                       \\
+      \midrule
+      \texttt{push} &             & $r1$     &  & Empile $r1$ sur le tas            \\
+      \texttt{pop}  & $r1$        &          &  & Dépile le sommet du tas dans $r1$ \\
+      \bottomrule
+\end{tabularx}
+
+\subsubsection*{Opération sur la mémoire}
+
+\noindent
+\begin{tabularx}{\textwidth}{ccc S X}
+      \toprule
+      Instruction     & Destination & Argument &   & Description                                            \\
+      \midrule
+      \texttt{mov}    & $r1$        & $r2$     &   & Copie le registre $r2$ dans $r1$                       \\
+      \texttt{load}   & $r1$        & $m$      &   & Copie la valeur de la mémoire à l'adresse $m$ dans $r$ \\
+      \texttt{li}     & $r1$        & $i$      &   & Copie la valeur $i$ dans $r1$                          \\
+      \texttt{loadi}  & $r1$        & $\$l$    &   & Copie l'adresse associée à $l$ dans $r1$               \\
+      \texttt{loadia} &             &          &                                                            \\
+      \bottomrule
+\end{tabularx}
 
 \end{document}
