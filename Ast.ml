@@ -89,6 +89,7 @@ and text_kind =
   | TextColor of color * text
   | BackColor of color * text
   | Style of text_style * text
+  | Text of string
 
 type immediate = Int64.t pos
 (** An immediate with position *)
