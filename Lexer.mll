@@ -36,13 +36,13 @@ let label = (upper | lower ) (lower | upper | digit)*
 
 
 rule gen_tokens = parse
-  | '\n'            { Lexing.new_line lexbuf; END_INST }
+  | '\n'            { Lexing.new_line lexbuf; END_INST}
   | ' ' | '\t'      { gen_tokens lexbuf }
   | eof             { EOF }
   | ';'             {line_comment lexbuf}
-  | integer as i    {INT((int_of_string i))}
-  | "0b" integer as i {INT (int_of_string i)} (* TODO *)
-  | "0x" integer as i {INT (int_of_string i)} (* TODO*)
+  | integer as i    {IMM((int_of_string i))}
+  | "0b" integer as i {IMM (int_of_string i)} (* TODO *)
+  | "0x" integer as i {IMM (int_of_string i)} (* TODO*)
   | '"'             {string_lex lexbuf}
   | registre as r { 
     let rnum = String.sub r 1 (String.length rsub - 1) in

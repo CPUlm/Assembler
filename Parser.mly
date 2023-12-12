@@ -1,5 +1,6 @@
 %{
     open Ast
+    open Funcs
 %}
 
 %token ADD SUB MUL DIV
@@ -15,7 +16,7 @@
 %token END_INST
 %token <string>STR
 %token <string>LBL
-%token <int>INT
+%token <int>IMM
 %token DOLLAR CLN (* : *)
 
 %token   <int>R
@@ -23,6 +24,15 @@
 
 
 %start<Ast.file> file
+%%
+
+
+inst_sans_label:
+    | AND i=R {Nop}
+
+inst:
+    | l=LBL CLN i = inst_sans_label {(Some l,i)}
+    | i =  inst_sans_label {(None,i)}
 
 file:
-    | il = separated_list 
+    | il = separated_list(END_INST,inst) {il}
