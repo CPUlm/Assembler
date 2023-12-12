@@ -118,13 +118,14 @@ and inst_kind =
   (* Memory operations *)
   | Load of reg * reg
   | LoadImmediate of reg * int * bool
+  | LoadImmediateLabel of reg * label * bool
   | LoadImmediateAdd of reg * int * bool * reg
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)
   (* Flow instructions *)
   | Test of reg (* Pseudo instr *)
-  | JmpLabel of string (* Pseudo instr *)
-  | JmpLabelCond of flag * string (* Pseudo instr *)
+  | JmpLabel of label (* Pseudo instr *)
+  | JmpLabelCond of flag * label (* Pseudo instr *)
   | JmpAddr of reg
   | JmpAddrCond of flag * reg
   | JmpOffset of int
