@@ -7,7 +7,7 @@ let kw_tok  = [
   ("LSL",LSL);("ASR",ASR);("LSR";LSR);
   ("LOAD",LOAD);("STORE",STORE);("LOADI",LOADI);("LOADIA",LOADIA);
   ("JMP",JMP);("JMPC",JMPC);("JMPI",JMPI);("JMPIC";JMPIC);
-  ("NOP",NOP);
+  ("NOP",NOP); ("NEG",NEG); ("NOT",NOT);
   ("CALL",CALL);("RET",RET);
   ("PUSH",PUSH);("POP",POP);
   ("$",DOLLAR);(":",CLN);

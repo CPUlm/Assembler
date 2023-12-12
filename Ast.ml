@@ -140,7 +140,7 @@ and inst_kind =
   | JmpImmediateCond of flag * immediate
   | Halt
   (* Functions *)
-  | CallLabel of string (* Pseudo instr *)
+  | CallLabel of label (* Pseudo instr *)
   | CallAddr of reg (* Pseudo instr *)
   | Ret (* Pseudo instr *)
 
