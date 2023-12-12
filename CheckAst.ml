@@ -1,6 +1,8 @@
 open Ast
 open TAst
 
+let check_immediate imm = assert false
+
 let check_writable_reg r =
   match r with
   | R0 | R1 | SP | FP -> assert false (* TODO : Print Warning here !*)
@@ -58,7 +60,21 @@ let process_pseudo instr =
   | Pop r1 ->
       check_writable_reg r1;
       [ TLoad (r1, SP); TSub (SP, SP, R1) ] |> Monoid.from_list
-  | _ -> assert false
+  | Load (r1, r2) ->
+      check_writable_reg r1;
+      TLoad (r1, r2) |> Monoid.from_elm
+  | LoadImmediate (r1, imm, lhw) ->
+      check_writable_reg r1;
+      let imm = check_immediate imm in
+      TLoadImmediateAdd (r1, imm, lhw, R0) |> Monoid.from_elm
+
+(* | Load of reg * reg *)
+(* | LoadImmediate of reg * int * bool *)
+(* | LoadImmediateLabel of reg * label * bool *)
+(* | LoadImmediateAdd of reg * int * bool * reg *)
+(* | Store of reg * reg *)
+(* | Mov of reg * reg Pseudo instr *)
+
 (* | Nop (* Pseudo instr *)
 
    (* Memory operations *)
