@@ -1,5 +1,5 @@
 \documentclass[french, 12pt]{article}
-\usepackage[a4paper, top=2cm, bottom=2cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage[a4paper, top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
 
 \usepackage{fancyvrb}
 
@@ -16,19 +16,45 @@
 \usepackage{hyperref}
 \usepackage{tabularx}
 \usepackage{booktabs}
+\usepackage{bytefield}
+\usepackage{rotating}
+\usepackage{register}
+\usepackage[table]{xcolor}
 
-\setlength {\marginparwidth }{2cm}
+% \setlength {\marginparwidth }{2cm}
+% \usepackage{todonotes}
 
-\usepackage{todonotes}
+\newcommand{\bitlabel}[2]{%
+\bitbox[]{#1}{%
+\raisebox{0pt}[4ex][0pt]{%
+\turnbox{50}{\fontsize{7}{7}\selectfont#2}%
+}%
+}%
+}
 
-\pagenumbering{gobble}
+\definecolor{black}         {RGB}{12,  12,  12 }
+\definecolor{red}           {RGB}{197, 15,  31 }
+\definecolor{green}         {RGB}{19,  161, 14 }
+\definecolor{yellow}        {RGB}{193, 156, 0  }
+\definecolor{blue}          {RGB}{0,   55,  218}
+\definecolor{magenta}       {RGB}{136, 25,  152}
+\definecolor{cyan}          {RGB}{58,  150, 221}
+\definecolor{white}         {RGB}{204, 204, 204}
+\definecolor{bright_black}  {RGB}{118, 118, 118}
+\definecolor{bright_red}    {RGB}{231, 72,  86 }
+\definecolor{bright_green}  {RGB}{22,  198, 12 }
+\definecolor{bright_yellow} {RGB}{249, 241, 165}
+\definecolor{bright_blue}   {RGB}{59,  120, 255}
+\definecolor{bright_magenta}{RGB}{180, 0,   158}
+\definecolor{bright_cyan}   {RGB}{97,  214, 214}
+\definecolor{bright_white}  {RGB}{242, 242, 242}
 
 \begin{document}
 
 \section*{Syntaxe d'un fichier}
 Les commentaires commencent par \texttt{;} et s'étendent jusqu'à la fin de la ligne.
 
-Sections disponibles  :
+Les sections disponibles sont les suivantes :
 \begin{description}
       \item[\texttt{.text}] signale le début d'une section d'instructions assembleur.
       \item[\texttt{.data}] signale le début d'une section de déclarations de données.
@@ -37,8 +63,7 @@ Sections disponibles  :
 
 Chaque instruction ou déclaration peut être localisée par un \emph{label} qui
 sera converti en une adresse par l'assembleur. Un label peut être composé des
-caractères suivants : \texttt{a}-\texttt{z}, \texttt{A}-\texttt{Z},
-\texttt{0}-\texttt{9} ou \texttt{\_}.
+caractères suivants : \texttt{a}-\texttt{z}, \texttt{A}-\texttt{Z}, ou \texttt{\_}.
 
 
 On localise une instruction/déclaration à l'aide de la syntaxe :
@@ -55,9 +80,7 @@ on utilise la syntaxe suivante à n'importe quel endroit du fichier :
 à cette position.
 
 Les dossiers utilisés pour la recherche des fichiers à insérer est configurable
-via la ligne de commande.%
-%
-\todo{Quel flag ? À la GCC avec un \texttt{-I} ?}
+via la ligne de commande.
 
 \section*{Données}
 
@@ -65,33 +88,87 @@ via la ligne de commande.%
 
 Les chaines de caractères sont composées des caractères suivants :
 \begin{itemize}
-      \item Les caractères ASCII affichable (codes $32$ à $126$ inclus).
+      \item Les caractères ASCII affichables (codes $32$ à $126$ inclus).
       \item Le caractère nul noté \verb|\0| (code $0$).
-      \item Le caractère d'appel noté \verb|\a| (code $7$).
-      \item Le caractère de tabulation noté \verb|\t| (code $9$).
-      \item Le caractère de saut de ligne noté \verb|\n| (code $10$).
 \end{itemize}
-
-\todo[inline]{Ajouter les caractères permettant de se déplacer dans le terminal ? Quid
-      de la gestion de \guillemetleft{}l'écran\guillemetright{} par le simulateur ?
-      Le \texttt{\textbackslash{}a} est là pour faire \emph{ding} :)}
-
 Les caractères \texttt{"} et les \texttt{\textbackslash} sont échappés :
 \texttt{\textbackslash{}"} pour le guillemet et
 \texttt{\textbackslash{}\textbackslash{}} pour la barre oblique inversée.
-Chaque caractère est codé sur $8$ bits, le bit de poids fort étant toujours
-fixé à $0$.
+La \autoref{fig:char} expose comment les caractères sont codés sur des
+mots de $32$ bits.
 
-Puisque les calculs ne peuvent s'opérer que sur des mots de $32$ bits, on encode
-les caractères par bloc de $4$, complété si besoin par plusieurs caractères nul,
-de la manière suivante :
-\begin{equation*}
-      \texttt{ab\textbackslash{}nc} \rightsquigarrow \texttt{01100001 01100010 00001010 01100011} \rightsquigarrow \overline{1633815139_{10}}
-\end{equation*}
+\begin{figure}[htp]
+      \begin{center}
+            \vspace{0.5cm}% Parceque la taille des truc penchés n'est pas hyper bien calculée
+            \begin{bytefield}[bitwidth=0.03\textwidth]{32}
+                  \bitlabel{16}{}
+                  & \bitlabel{1}{Bold} & \bitlabel{1}{Faint}
+                  & \bitlabel{1}{Italic} & \bitlabel{1}{Underline}
+                  & \bitlabel{1}{Blinking} & \bitlabel{1}{Hide}
+                  & \bitlabel{1}{Crossed} & \bitlabel{1}{Overline} \\
+                  \bitheader{0,6-8,11,12,15-24,31} \\
+                  \bitbox{7}{Code ASCII} & \bitbox{1}{0} & \bitbox{4}{FG} &
+                  \bitbox{4}{BG} & \bitbox{8}{Style} & \bitbox{8}{0}
+            \end{bytefield}
+      \end{center}
+      \caption{Encodage d'un caractère.}
+      \label{fig:char}
+\end{figure}
 
-\todo[inline]{Vraiment, Vraiment pas pratique pour la manipulation des chaines...
-      Soit faire une stdlib poussée pour manipuler les chaines (concat, substr, getchr, ...)
-      Soit faire de l'adressage mémoire par octet : BadBadBad mal au cerveau.}
+Avec :
+\begin{itemize}
+      \item Code ASCII : Le code ASCII du caractère représenté.
+      \item FG : La couleur du texte comme décrit dans le \autoref{tbl:color}.
+      \item BG : La couleur du derrière du texte comme décrit dans le \autoref{tbl:color}.
+\end{itemize}
+
+\newpage
+
+\renewcommand{\arraystretch}{1.1}
+\begin{table}[htp]
+      \begin{center}
+            \begin{tabular}{clcp{1em}clc}
+                  \toprule
+                  Identifiant & Nom     &                                   &  & Identifiant & Nom           &                                          \\
+                  \midrule
+                  0           & Noir    & \cellcolor{black}\hspace{1.5em}   &  & 8           & Noir Clair    & \cellcolor{bright_black}\hspace{1.5em}   \\
+                  1           & Rouge   & \cellcolor{red}\hspace{1.5em}     &  & 9           & Rouge Clair   & \cellcolor{bright_red}\hspace{1.5em}     \\
+                  2           & Vert    & \cellcolor{green}\hspace{1.5em}   &  & 10          & Vert Clair    & \cellcolor{bright_green}\hspace{1.5em}   \\
+                  3           & Jaune   & \cellcolor{yellow}\hspace{1.5em}  &  & 11          & Jaune Clair   & \cellcolor{bright_yellow}\hspace{1.5em}  \\
+                  4           & Bleu    & \cellcolor{blue}\hspace{1.5em}    &  & 12          & Bleu Clair    & \cellcolor{bright_blue}\hspace{1.5em}    \\
+                  5           & Magenta & \cellcolor{magenta}\hspace{1.5em} &  & 13          & Magenta Clair & \cellcolor{bright_magenta}\hspace{1.5em} \\
+                  6           & Cyan    & \cellcolor{cyan}\hspace{1.5em}    &  & 14          & Cyan Clair    & \cellcolor{bright_cyan}\hspace{1.5em}    \\
+                  7           & Blanc   & \cellcolor{white}\hspace{1.5em}   &  & 15          & Blanc Clair   & \cellcolor{bright_white}\hspace{1.5em}   \\
+                  \bottomrule
+            \end{tabular}
+      \end{center}
+      \caption{Couleurs disponibles et leurs identifiants.}
+      \label{tbl:color}
+\end{table}
+
+Le texte est par défaut donné entre guillement : \texttt{"texte"}. Les
+fonctions suivantes sont disponibles afin de spécifier les couleurs ainsi que
+le style du texte :
+\begin{itemize}
+      \item \texttt{\#textcolor(}\textit{couleur}, \texttt{"}\textit{texte}\texttt{")} pour spécifier la couleur du texte.
+      \item \texttt{\#backcolor(}\textit{couleur}, \texttt{"}\textit{texte}\texttt{")} pour spécifier la couleur du fond.
+      \item \texttt{\#bold(}\texttt{"}\textit{texte}\texttt{")}
+      \item \texttt{\#faint(}\texttt{"}\textit{texte}\texttt{")}
+      \item \texttt{\#italic(}\texttt{"}\textit{texte}\texttt{")}
+      \item \texttt{\#underline(}\texttt{"}\textit{texte}\texttt{")}
+      \item \texttt{\#blinking(}\texttt{"}\textit{texte}\texttt{")}
+      \item \texttt{\#hide(}\texttt{"}\textit{texte}\texttt{")}
+      \item \texttt{\#crossed(}\texttt{"}\textit{texte}\texttt{")}
+      \item \texttt{\#overlined(}\texttt{"}\textit{texte}\texttt{")}
+\end{itemize}
+
+Le symbole \texttt{+} pourra être utilisé afin de concaténer du texte.
+Par exemple :
+\begin{center}
+      \noindent\texttt{\#bold(\#textcolor(red, "Hello") + " " + \#italic(\#textcolor("green", "World")))}  \\
+      \textdownarrow\\
+      \noindent\texttt{\textbf{\color{red}{Hello}} \textit{\color{green}{World}}}
+\end{center}
 
 \subsection*{Entiers}
 
@@ -105,13 +182,13 @@ Les entiers peuvent être donnés dans plusieurs bases :
 \subsection*{Déclaration des données}
 
 On utilise les notations suivantes pour déclarer des données :
-\begin{description}[leftmargin=!, labelwidth=\widthof{\bf \texttt{.string "..."}}]
-      \item[\texttt{.ascii "..."}] déclare une chaine de caractère.
-            Cette chaine n'est pas forcément terminée par \verb|\0|.
-      \item[\texttt{.string "..."}] déclare une chaine de caractère forcément
+\begin{description}[format=\normalfont, leftmargin=!, labelwidth=\widthof{\textbf{\texttt{.string}} \textit{text}}]
+      \item[\textbf{\texttt{.ascii}} \textit{text}] déclare une chaîne de caractère.
+            Cette chaîne n'est pas forcément terminée par \verb|\0|.
+      \item[\textbf{\texttt{.string}} \textit{text}] déclare une chaîne de caractère forcément
             terminée par \verb|\0|.
-      \item[\texttt{.uint ...}] déclare un entier non signé sur $32$ bits (de $0$ à $2^{32}-1$).
-      \item[\texttt{.int ...}] déclare un entier signé sur $32$ bits (de $-2^{31}$ à $2^{31}-1$).
+      \item[\textbf{\texttt{.uint}}] déclare un entier non signé sur $32$ bits (de $0$ à $2^{32}-1$).
+      \item[\textbf{\texttt{.int}}] déclare un entier signé sur $32$ bits (de $-2^{31}$ à $2^{31}-1$).
 \end{description}
 
 \section*{Instructions}
@@ -135,7 +212,7 @@ particulier :
 La pile est organisée de cette manière lors d'un appel de fonction :
 \input{stack}
 
-Les arguments d'une fonction sont données dans les registres \texttt{r20} à \texttt{r28}.
+Les arguments d'une fonction sont donnés dans les registres \texttt{r20} à \texttt{r28}.
 Les registres de \texttt{r15} à \texttt{r28} sont dits \emph{caller-saved} :
 une fonction est susceptible d'écraser la valeur de ces registres sans les restaurer.
 Les registres de \texttt{r0} à \texttt{r14} sont dits \emph{callee-saved} :
@@ -143,106 +220,142 @@ lors de l'appel à une fonction, cette dernière ne doit pas modifier ces regist
 
 \subsection*{Labels}
 
-Les \emph{labels} ne peuvent être déclarés qu'une seule fois sauf les
-\emph{labels} ayant un entier en base décimale comme identifiant. Dans ce cas,
-on fait référence au \emph{label} $N$ précédent par $N\texttt{b}$ et au label
-suivant par $N\texttt{f}$. La référence à un \emph{label} $N$ de manière directe
-n'est pas autorisée.
+Les \emph{labels} ne peuvent être déclarés qu'une seule fois.
 
 \subsection*{Format des Sauts}
 
 Lors de saut les formats d'adresse suivants sont autorisés :
 \begin{itemize}
       \item Saut à une adresse absolue. L'adresse est donnée sans signe dans
-            n'importe quelle base, préfixée de \verb|$|. Exemple :
-            \verb|jmp $12| saute à l'adresse $12$ du programme.
+            n'importe quelle base. Exemple : \verb|jmp 12| saute à l'adresse $12$ du programme.
       \item Saut à une adresse relative. L'adresse est donnée avec un signe
-            (\texttt{+} ou \texttt{-}) dans n'importe quelle base, préfixée de
-            \verb|$|. Exemple : \verb|jmp $+12| saute $12$ instruction après,
-            \verb|jmp $-12| saute $12$ instruction avant.
+            (\texttt{+} ou \texttt{-}) dans n'importe quelle base. Exemple :
+            \verb|jmp +12| saute $12$ instruction après, \verb|jmp -12| saute
+            $12$ instruction avant.
       \item Saut à un \emph{label}. L'adresse absolue est calculée par
             l'assembleur. Exemple : \verb|jmp lbl| saute au label \emph{lbl} du
             programme.
 \end{itemize}
 
-\todo[inline]{
-      Vraiment pas pratique de gérer à la fois les labels ``numériques'' et les
-      sauts à des offsets... Pourquoi autoriser les offsets ? C'est bien les
-      labels.}
-
 \subsection*{Instructions}
 
 \renewcommand\tabularxcolumn[1]{m{#1}}
-\newcolumntype{S}{ p{1cm} }
+\renewcommand{\arraystretch}{1.5}
 
-\subsubsection*{Instructions Logiques}
+\subsubsection*{Instructions de Calculs Logiques}
 \noindent
-\begin{tabularx}{\textwidth}{cccc S X}
+\begin{tabularx}{\textwidth}{cccc X}
       \toprule
-      Instruction  & Destination & \multicolumn{2}{c}{Arguments} &      & Description                       \\
+      Instruction  & Destination & \multicolumn{2}{c}{Arguments} & Description                                             \\
       \midrule
-      \texttt{and} & $r1$        & $r2$                          & $r3$ &             & et logique          \\
-      \texttt{orr} & $r1$        & $r2$                          & $r3$ &             & ou logique          \\
-      \texttt{nor} & $r1$        & $r2$                          & $r3$ &             & non-ou logique      \\
-      \texttt{xor} & $r1$        & $r2$                          & $r3$ &             & ou exclusif logique \\
-      \texttt{not} & $r1$        & $r2$                          &      &             & non logique         \\
+      \texttt{and} & $r_1$       & $r_2$                         & $r_3$       & Calcule $r_2 \land r_3$ dans $r_1$.       \\
+      \texttt{or}  & $r_1$       & $r_2$                         & $r_3$       & Calcule $r_2 \lor r_3$ dans $r_1$.        \\
+      \texttt{nor} & $r_1$       & $r_2$                         & $r_3$       & Calcule $\neg (r_2 \lor r_3)$ dans $r_1$. \\
+      \texttt{xor} & $r_1$       & $r_2$                         & $r_3$       & Calcule $r_2 \oplus r_3$ dans $r_1$.      \\
+      \texttt{not} & $r_1$       & $r_2$                         &             & Calcule $\neg r_2$ dans $r_1$.            \\
       \bottomrule
 \end{tabularx}
 
-\subsubsection*{Instructions Arithmétiques}
+\subsubsection*{Instructions de Calculs Arithmétiques}
 
 \noindent
-\begin{tabularx}{\textwidth}{cccc S X}
+\begin{tabularx}{\textwidth}{cccc X}
       \toprule
-      Instruction  & Destination & \multicolumn{2}{c}{Arguments} &      & Description                  \\
+      Instruction  & Destination & \multicolumn{2}{c}{Arguments} & Description                                        \\
       \midrule
-      \texttt{add} & $r1$        & $r2$                          & $r3$ &             & addition       \\
-      \texttt{sub} & $r1$        & $r2$                          & $r3$ &             & soustraction   \\
-      \texttt{mul} & $r1$        & $r2$                          & $r3$ &             & multiplication \\
-      \texttt{div} & $r1$        & $r2$                          & $r3$ &             & division       \\
-      \texttt{neg} & $r1$        & $r2$                          &      &             & négation       \\
-      \texttt{inc} & $r1$        & $r2$                          &      &             & incrémente     \\
-      \texttt{dec} & $r1$        & $r2$                          &      &             & décrémente     \\
+      \texttt{add} & $r_1$       & $r_2$                         & $r_3$       & Calcule $r_2 + r_3$ dans $r_1$.      \\
+      \texttt{sub} & $r_1$       & $r_2$                         & $r_3$       & Calcule $r_2 - r_3$ dans $r_1$.      \\
+      \texttt{mul} & $r_1$       & $r_2$                         & $r_3$       & Calcule $r_2 \times r_3$ dans $r_1$. \\
+      \texttt{div} & $r_1$       & $r_2$                         & $r_3$       & Calcule $r_2 \div r_3$ dans $r_1$.   \\
+      \texttt{neg} & $r_1$       & $r_2$                         &             & Calcule $-r_2$ dans $r_1$.           \\
+      \texttt{inc} & $r_1$       & $r_2$                         &             & Calcule $r_2 + 1$ dans $r_1$.        \\
+      \texttt{dec} & $r_1$       & $r_2$                         &             & Calcule $r_2 - 1$ dans $r_1$.        \\
       \bottomrule
 \end{tabularx}
 
-\subsubsection*{Décalages}
+\subsubsection*{Instructions de Décalages}
+
+Les décalages sont opérés modulo $32$ bits.
 
 \noindent
-\begin{tabularx}{\textwidth}{ccc S X}
+\begin{tabularx}{\textwidth}{cccc X}
       \toprule
-      Instruction  & Destination & Argument &  & Description                    \\
+      Instruction  & Destination & \multicolumn{2}{c}{Arguments} & Description                                                                                         \\
       \midrule
-      \texttt{asr} & $r1$        & $r2$     &  & Décalage à droite arithmétique \\
-      \texttt{lsr} & $r1$        & $r2$     &  & Décalage à droite logique      \\
-      \texttt{lrl} & $r1$        & $r2$     &  & Décalage à gauche              \\
+      \texttt{asr} & $r_1$       & $r_2$                         & $r_3$       & Décale $r_2$ vers la droite de $r_3$ bits en dupliquant le bit de signe dans $r_1$.   \\
+      \texttt{lsr} & $r_1$       & $r_2$                         & $r_3$       & Décale $r_2$ vers la droite de $r_3$ bits en ajoutant les $0$ nécessaires dans $r_1$. \\
+      \texttt{lrl} & $r_1$       & $r_2$                         & $r_3$       & Décale $r_2$ vers la gauche de $r_3$ bits en ajoutant les $0$ nécessaires dans $r_1$. \\
       \bottomrule
 \end{tabularx}
 
-\subsubsection*{Opération sur le Tas}
+\subsubsection*{Instructions pour la manipulation du Tas}
 
 \noindent
-\begin{tabularx}{\textwidth}{ccc S X}
+\begin{tabularx}{\textwidth}{ccc X}
       \toprule
-      Instruction   & Destination & Argument &  & Description                       \\
+      Instruction   & Destination & Argument & Description                         \\
       \midrule
-      \texttt{push} &             & $r1$     &  & Empile $r1$ sur le tas            \\
-      \texttt{pop}  & $r1$        &          &  & Dépile le sommet du tas dans $r1$ \\
+      \texttt{push} &             & $r_1$    & Empile $r_1$ sur le tas.            \\
+      \texttt{pop}  & $r_1$       &          & Dépile le sommet du tas dans $r_1$. \\
       \bottomrule
 \end{tabularx}
 
-\subsubsection*{Opération sur la mémoire}
+\subsubsection*{Instructions pour manipuler la Mémoire}
+
+On note $x_l$ les bits de poids faibles (bits de $0$ à $15$) de $x$ et
+$x_h$ les bits de poids forts de $x$ (bits de $16$ à $31$).
 
 \noindent
-\begin{tabularx}{\textwidth}{ccc S X}
+\begin{tabularx}{\textwidth}{cccc X}
       \toprule
-      Instruction     & Destination & Argument &   & Description                                            \\
+      Instruction      & Destination & \multicolumn{2}{c}{Arguments} & Description                                                                                     \\
       \midrule
-      \texttt{mov}    & $r1$        & $r2$     &   & Copie le registre $r2$ dans $r1$                       \\
-      \texttt{load}   & $r1$        & $m$      &   & Copie la valeur de la mémoire à l'adresse $m$ dans $r$ \\
-      \texttt{li}     & $r1$        & $i$      &   & Copie la valeur $i$ dans $r1$                          \\
-      \texttt{loadi}  & $r1$        & $\$l$    &   & Copie l'adresse associée à $l$ dans $r1$               \\
-      \texttt{loadia} &             &          &                                                            \\
+      \texttt{mov}     & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ dans $r_1$.                                                             \\
+      \texttt{store}   & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ à l'adresse mémoire de $r_1$.                                           \\
+      \texttt{load}    & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie la valeur de la mémoire à l'adresse $r_2$ dans $r_1$.                                     \\
+      \texttt{loadi}   & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i$ (codé sur $16$ bits) dans $r_1$.                                                      \\
+      \texttt{loadi}   & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie $l_l$ dans $r_1$.                                                                         \\
+      \texttt{loadi.h} & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i \ll 16$ dans $r_1$.                                                                    \\
+      \texttt{loadi.h} & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie $l_h$ dans $r_1$.                                                                         \\
+      \texttt{loadi}   & $r_1$       & $i$                           & $r_2$                                                       & Copie $i + r2$ dans $r_1$.        \\
+      \texttt{loadi}   & $r_1$       & $\$l$                         & $r_2$                                                       & Copie $l_l + r2$ dans $r_1$.      \\
+      \texttt{loadi.h} & $r_1$       & $i$                           & $r_2$                                                       & Copie $i \ll 16 + r2$ dans $r_1$. \\
+      \texttt{loadi.h} & $r_1$       & $\$l$                         & $r_2$                                                       & Copie $l_h + f2$ dans $r_1$.      \\
+      \bottomrule
+\end{tabularx}
+
+\subsubsection*{Instructions de Branchement}
+
+\noindent
+\begin{tabularx}{\textwidth}{ccc X}
+      \toprule
+      Instruction             & Destination & Argument & Description                                                                                                                                 \\
+      \midrule
+      \texttt{test}           &             & $r_1$    & Remplit les flags $\textbf{N}$\footnote{\textit{Flag} négatif} et $\textbf{Z}$\footnote{\textit{Flag} zéro} à partir de la valeur de $r_1$. \\
+      \texttt{jmp}            &             & $r_1$    & Continue l'exécution du programme à l'adresse $r_1$.                                                                                        \\
+      \texttt{jmp}            &             & $\$l$    & Continue l'exécution du programme à l'adresse associée au label $l$.                                                                        \\
+      \texttt{jmp}            &             & $i$      & Continue l'exécution du programme à l'adresse $i$ (entier codé sur $16$ bits).                                                              \\
+      \texttt{jmp}            &             & $+i$     & Continue l'exécution du programme $i$ adresses (entier codé sur $16$ bits) plus tard.                                                       \\
+      \texttt{jmp}            &             & $-i$     & Continue l'exécution du programme $i$ adresses (entier codé sur $16$ bits) avant.                                                           \\
+      \texttt{jmp}.\textit{F} &             & $r_1$    & Continue l'exécution du programme à l'adresse $r_1$ lorsque le \textit{flag} $F$ est activé.                                                \\
+      \texttt{jmp}.\textit{F} &             & $\$l$    & Continue l'exécution du programme à l'adresse associée au label $l$ lorsque le \textit{flag} $F$ est activé.                                \\
+      \texttt{jmp}.\textit{F} &             & $i$      & Continue l'exécution du programme à l'adresse $i$ (entier codé sur $16$ bits) lorsque le \textit{flag} $F$ est activé.                      \\
+      \texttt{jmp}.\textit{F} &             & $+i$     & Continue l'exécution du programme $i$ adresses (entier codé sur $16$ bits) plus tard lorsque le \textit{flag} $F$ est activé.               \\
+      \texttt{jmp}.\textit{F} &             & $-i$     & Continue l'exécution du programme $i$ adresses (entier codé sur $16$ bits) avant lorsque le \textit{flag} $F$ est activé.                   \\
+      \bottomrule
+\end{tabularx}
+
+
+\subsubsection*{Instructions pour les Fonctions}
+
+\noindent
+\begin{tabularx}{\textwidth}{ccc X}
+      \toprule
+      Instruction   & Destination & Argument & Description                                                          \\
+      \midrule
+      \texttt{call} &             & $\$l$    & Appelle la fonction $l$.                                             \\
+      \texttt{call} &             & $r_1$    & Appelle la fonction à l'adresse $r_1$ du programme.                  \\
+      \texttt{ret}  &             &          & Termine la fonction courante et retourne à l'exécution du programme. \\
       \bottomrule
 \end{tabularx}
 

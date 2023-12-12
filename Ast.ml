@@ -1,4 +1,4 @@
-type flag = Zero | Negative | UnsignedOverflowFlag | SignedOverflowFlag
+(** Allowed Registers *)
 type reg =
   | R0
   | R1
@@ -32,7 +32,48 @@ type reg =
   | ROut
   | SP
   | FP
-(* PC est caché *)
+
+(** Available Flags *)
+type flag = Zero | Negative | UnsignedOverflowFlag | SignedOverflowFlag
+
+(** Possible color of the text *)
+type color =
+  | Black
+  | Red
+  | Green
+  | Yellow
+  | Blue
+  | Magenta
+  | Cyan
+  | White
+  | BrightBlack
+  | BrightRed
+  | BrightGreen
+  | BrightYellow
+  | BrightBlue
+  | BrightMagenta
+  | BrightCyan
+  | BrightWhite
+
+(** Style of the text *)
+type text_style =
+  | Bold
+  | Faint
+  | Italic
+  | Underline
+  | Blinking
+  | Hide
+  | Crossed
+  | Overline
+
+(** A text constant *)
+type text =
+  | Concat of text * text
+  | TextColor of color * text
+  | BackColor of color * text
+  | Style of text_style * text
+
+(** All possible instructions *)
 type inst =
   | Nop (* Pseudo instr *)
   (* Logical Operations *)
@@ -41,7 +82,7 @@ type inst =
   | Nor of reg * reg * reg
   | Xor of reg * reg * reg
   | Not of reg * reg (* Pseudo instr *)
-  (* Arthmetic operation *)
+  (* Arithmetic operation *)
   | Add of reg * reg * reg
   | Sub of reg * reg * reg
   | Mul of reg * reg * reg
@@ -71,7 +112,13 @@ type inst =
   (* Functions *)
   | CallLabel of string (* Pseudo instr *)
   | CallAddr of reg (* Pseudo instr *)
-  | CallOffer of int (* Pseudo instr *)
   | Ret (* Pseudo instr *)
 
-and file = (string option * inst) list
+(** All possible data *)
+type data = Text of text | UInt of Int32.t | Int of int
+
+and file = {
+  text : (string option * inst) list;
+  data : (string option * data) list;
+}
+(** An assembly file, with its data and its text sections. *)
