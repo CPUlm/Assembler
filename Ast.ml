@@ -46,7 +46,7 @@ and reg =
   | FP
 
 (** Available Flags *)
-type flag = Zero | Negative | UnsignedOverflowFlag | SignedOverflowFlag
+type flag = Zero | Negative | UnsignedUnderflowFlag | SignedOverflowFlag
 
 type color = color_kind pos
 (** Possible color of the text *)
