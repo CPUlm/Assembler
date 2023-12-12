@@ -129,6 +129,7 @@ and inst_kind =
   | JmpAddrCond of flag * reg
   | JmpOffset of int
   | JmpOffsetCond of flag * int
+  | Halt
   (* Functions *)
   | CallLabel of string (* Pseudo instr *)
   | CallAddr of reg (* Pseudo instr *)
