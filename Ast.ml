@@ -1,5 +1,18 @@
+type position = {
+  beg_col : int;
+  beg_line : int;
+  end_col : int;
+  end_line : int;
+  file : string;
+}
+
+type 'a pos = { v : 'a; pos : position }
+type label = string pos
+
+type reg = reg_kind pos
 (** Allowed Registers *)
-type reg =
+
+and reg_kind =
   | R0
   | R1
   | R2
@@ -33,11 +46,15 @@ type reg =
   | SP
   | FP
 
+type flag = flag_kind pos
 (** Available Flags *)
-type flag = Zero | Negative | UnsignedOverflowFlag | SignedOverflowFlag
 
+and flag_kind = Zero | Negative | UnsignedOverflowFlag | SignedOverflowFlag
+
+type color = color_kind pos
 (** Possible color of the text *)
-type color =
+
+and color_kind =
   | Black
   | Red
   | Green
@@ -55,8 +72,10 @@ type color =
   | BrightCyan
   | BrightWhite
 
+type text_style = text_style_kind pos
 (** Style of the text *)
-type text_style =
+
+and text_style_kind =
   | Bold
   | Faint
   | Italic
@@ -66,15 +85,19 @@ type text_style =
   | Crossed
   | Overline
 
+type text = text_kind pos
 (** A text constant *)
-type text =
+
+and text_kind =
   | Concat of text * text
   | TextColor of color * text
   | BackColor of color * text
   | Style of text_style * text
 
+type inst = inst_kind pos
 (** All possible instructions *)
-type inst =
+
+and inst_kind =
   | Nop (* Pseudo instr *)
   (* Logical Operations *)
   | And of reg * reg * reg
@@ -114,11 +137,13 @@ type inst =
   | CallAddr of reg (* Pseudo instr *)
   | Ret (* Pseudo instr *)
 
+type data = data_kind pos
 (** All possible data *)
-type data = Text of text | UInt of Int32.t | Int of int
 
-and file = {
-  text : (string option * inst) list;
-  data : (string option * data) list;
+and data_kind = Text of text | UInt of Int32.t | Int of int
+
+type file = {
+  text : (label option * inst) list;
+  data : (label option * data) list;
 }
 (** An assembly file, with its data and its text sections. *)

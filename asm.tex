@@ -21,8 +21,6 @@
 \usepackage{register}
 \usepackage[table]{xcolor}
 
-% \setlength {\marginparwidth }{2cm}
-% \usepackage{todonotes}
 
 \newcommand{\bitlabel}[2]{%
 \bitbox[]{#1}{%
@@ -62,9 +60,8 @@ Les sections disponibles sont les suivantes :
 
 
 Chaque instruction ou déclaration peut être localisée par un \emph{label} qui
-sera converti en une adresse par l'assembleur. Un label peut être composé des
-caractères suivants : \texttt{a}-\texttt{z}, \texttt{A}-\texttt{Z}, ou \texttt{\_}.
-
+sera converti en une adresse par l'assembleur. Un label respecte la \emph{regex} suivante :
+\texttt{[a-z,A-Z,\_,0-9]$^{+}$}.
 
 On localise une instruction/déclaration à l'aide de la syntaxe :
 \begin{verbatim}
@@ -303,7 +300,8 @@ Les décalages sont opérés modulo $32$ bits.
 \subsubsection*{Instructions pour manipuler la Mémoire}
 
 On note $x_l$ les bits de poids faibles (bits de $0$ à $15$) de $x$ et
-$x_h$ les bits de poids forts de $x$ (bits de $16$ à $31$).
+$x_h$ les bits de poids forts de $x$ (bits de $16$ à $31$). On pourra également
+faire référence à \texttt{loadi} par \texttt{loadi.l}.
 
 \noindent
 \begin{tabularx}{\textwidth}{cccc X}
