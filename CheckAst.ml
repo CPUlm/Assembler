@@ -9,9 +9,9 @@ let check_writable_reg r =
 let process_pseudo instr =
   match instr with
   | Nop -> TAnd (R0, R0, R0) |> Monoid.from_elm
-  | Add (r1, r2, r3) ->
+  | And (r1, r2, r3) ->
       check_writable_reg r1;
-      TAdd (r1, r2, r3) |> Monoid.from_elm
+      TAnd (r1, r2, r3) |> Monoid.from_elm
   | Or (r1, r2, r3) ->
       check_writable_reg r1;
       TOr (r1, r2, r3) |> Monoid.from_elm
@@ -54,30 +54,32 @@ let process_pseudo instr =
   | ShiftRightLogical (r1, r2, r3) ->
       check_writable_reg r1;
       TShiftRightLogical (r1, r2, r3) |> Monoid.from_elm
+  | Push r1 -> [ TStore (SP, r1); TAdd (SP, SP, R1) ] |> Monoid.from_list
+  | Pop r1 ->
+      check_writable_reg r1;
+      [ TLoad (r1, SP); TSub (SP, SP, R1) ] |> Monoid.from_list
   | _ -> assert false
-
 (* | Nop (* Pseudo instr *)
-   | Push of reg (* Pseudo instr *)
-   | Pop of reg (* Pseudo instr *)
+
    (* Memory operations *)
-   | Load of reg * reg
-   | LoadImmediate of reg * int * bool
-   | LoadImmediateAdd of reg * int * bool * reg
-   | Store of reg * reg
-   | Mov of reg * reg (* Pseudo instr *)
-   (* Flow instructions *)
-   | Test of reg (* Pseudo instr *)
-   | JmpLabel of string (* Pseudo instr *)
-   | JmpLabelCond of flag * string (* Pseudo instr *)
-   | JmpAddr of reg
-   | JmpAddrCond of flag * reg
-   | JmpOffset of int
-   | JmpOffsetCond of flag * int
-   | JmpImmediate of int
-   | JmpImmediateCond of flag * int
-   | Halt
-   (* Functions *)
-   | CallLabel of string (* Pseudo instr *)
-   | CallAddr of reg (* Pseudo instr *)
-   | Ret (* Pseudo instr *)
+      | Load of reg * reg
+      | LoadImmediate of reg * int * bool
+      | LoadImmediateAdd of reg * int * bool * reg
+      | Store of reg * reg
+      | Mov of reg * reg (* Pseudo instr *)
+      (* Flow instructions *)
+      | Test of reg (* Pseudo instr *)
+      | JmpLabel of string (* Pseudo instr *)
+      | JmpLabelCond of flag * string (* Pseudo instr *)
+      | JmpAddr of reg
+      | JmpAddrCond of flag * reg
+      | JmpOffset of int
+      | JmpOffsetCond of flag * int
+      | JmpImmediate of int
+      | JmpImmediateCond of flag * int
+      | Halt
+      (* Functions *)
+      | CallLabel of string (* Pseudo instr *)
+      | CallAddr of reg (* Pseudo instr *)
+      | Ret (* Pseudo instr *)
 *)
