@@ -7,11 +7,10 @@ type position = {
 }
 
 type 'a pos = { v : 'a; pos : position }
-
 type label = string pos
 
 (** Allowed Registers *)
-and reg =
+type reg =
   | R0
   | R1
   | R2
@@ -108,6 +107,8 @@ and inst_kind =
   | Mul of reg * reg * reg
   | Div of reg * reg * reg
   | Neg of reg * reg (* Pseudo instr *)
+  | Incr of reg * reg (* Pseudo instr *)
+  | Decr of reg * reg (* Pseudo instr *)
   (* Shifts operations *)
   | ShiftLeftLogical of reg * reg * reg
   | ShiftRightArith of reg * reg * reg

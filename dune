@@ -1,5 +1,5 @@
 (executable
- (name assembler))
+ (name Assembler))
 
 ; (ocamllex
 ;  (modules Lexer))
