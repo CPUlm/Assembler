@@ -120,6 +120,7 @@ and inst_kind =
   | LoadImmediate of reg * int * bool
   | LoadImmediateLabel of reg * label * bool
   | LoadImmediateAdd of reg * int * bool * reg
+  | LoadImmediateAddLabel of reg * label * bool * reg
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)
   (* Flow instructions *)
