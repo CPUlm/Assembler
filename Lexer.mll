@@ -11,7 +11,9 @@ let kw_tok  = [
   ("CALL",CALL);("RET",RET);
   ("PUSH",PUSH);("POP",POP);
   ("$",DOLLAR);(":",CLN);
-  ("ROUT",Rout);("SP",SP);("FP",FP)
+  ("ROUT",Rout);("SP",SP);("FP",FP);
+  ("test",TEST);
+  ("Z",FLG_Z);("N",FLG_N);("C",FLG_C);("Z",FLG_Z);
 
 ]
 let string_buffer = Buffer.create 16
