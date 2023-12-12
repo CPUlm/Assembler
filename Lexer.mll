@@ -11,7 +11,9 @@ let kw_tok  = [
   ("CALL",CALL);("RET",RET);
   ("PUSH",PUSH);("POP",POP);
   ("$",DOLLAR);(":",CLN);
-  ("R",R);("ROUT",Rout);("SP",SP);("FP",FP)
+  ("ROUT",Rout);("SP",SP);("FP",FP);
+  ("test",TEST);
+  ("Z",FLG_Z);("N",FLG_N);("C",FLG_C);("Z",FLG_Z);
 
 ]
 let string_buffer = Buffer.create 16
@@ -30,7 +32,7 @@ let other = lower | upper | digit | '\''
 let upperword = upper+
 let dotdecl = '.' lower+
 let integer = '0' | ['1'-'9'] digit*
-let registre=  'R' integer
+let registre=  'R' integer | 'r' integer
 let label = (upper | lower ) (lower | upper | digit)*
 
 
