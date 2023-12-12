@@ -1,8 +1,13 @@
 (executable
- (name assembler))
+ (name Assembler))
 
 (ocamllex
  (modules Lexer))
 
 (menhir
  (modules Parser))
+
+(env
+ (dev
+  (flags
+   (:standard -w))))
