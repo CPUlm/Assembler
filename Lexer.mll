@@ -97,8 +97,8 @@ and string_lex = parse
     (* | "\\n"  {Buffer.add_char string_buffer '\n'; string_lex lexbuf } *)
     (* | "\\t"  {Buffer.add_char string_buffer '\t'; string_lex lexbuf } *)
     (* | "\\a"   {print_string "pas sûr pour \a"; Buffer.add_char string_buffer '\a'} *)
-    | "\n"   {raise (Lexing_error "Unterminated string")}
+    | "\n"   {raise (Lexing_error "Unterminated string.")}
     | _ as c {Buffer.add_char string_buffer c; string_lex lexbuf}
-    | eof       {raise (Lexing_error "Unterminated string")}
+    | eof       {raise (Lexing_error "Unterminated string.")}
 
 { }
