@@ -2,7 +2,6 @@
     open Ast
     open Funcs
     open PositionUtils
-
 %}
 
 %token ADD SUB MUL DIV
@@ -16,16 +15,16 @@
 %token PUSH POP
 %token DATA TEXT
 %token END_INST
-%token <string>STR
-%token <string>LBL
-%token <int32>IMM
+%token <string> STR
+%token <string> LBL
+%token <int32> IMM
 %token DOLLAR CLN (* : *) DOT
 %token EOF
-%token   <int>R
-%token Rout SP  FP
+%token <int> R
+%token Rout SP FP
 %token FLG_Z FLG_N FLG_C FLG_V
 %token TEST
-%token <int32>OFFS
+%token <int32> OFFS
 %token PLUS MOINS NEG
 %token HALT
 %token ASCII STRING UINT INT
@@ -86,11 +85,6 @@ inst_sans_label:
     | RET                   {Some {v=Ret; pos=(lexloc_to_pos $loc)}}
     | TEXT                  {None}
 
-
-
-
-
-
 inst:
     | l=LBL CLN i = inst_sans_label {(Some (label_to_pos $loc l),i)}
     | i =  inst_sans_label {(None,i)}
@@ -105,7 +99,8 @@ data:
     | d=data_sans_label {(None,d)}
 
 un_cycle:
-| TEXT l1=separated_list(END_INST,inst) DATA l2=separated_list(END_INST,data) {l1,l2}
+    | TEXT l1=separated_list(END_INST,inst) DATA l2=separated_list(END_INST,data) {l1,l2}
+
 file:
     | l=un_cycle* {
         format_file l
