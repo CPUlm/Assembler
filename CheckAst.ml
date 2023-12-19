@@ -116,7 +116,7 @@ let process_pseudo labels instr =
       check_writable_reg r1 instr;
       let imm = check_immediate imm in
       [ TLoadImmediateAdd (r1, imm, lhw, R0) ]
-  | LoadLabel (r1, label, lhw) ->
+  | LoadImmediateLabel (r1, label, lhw) ->
       check_writable_reg r1 instr;
       let lid = check_label labels label in
       [ TLoadLabelAdd (r1, lid, lhw, R0) ]
@@ -124,7 +124,7 @@ let process_pseudo labels instr =
       check_writable_reg r1 instr;
       let imm = check_immediate imm in
       [ TLoadImmediateAdd (r1, imm, lhw, r2) ]
-  | LoadLabelAdd (r1, label, lhw, r2) ->
+  | LoadImmediateAddLabel (r1, label, lhw, r2) ->
       check_writable_reg r1 instr;
       let lid = check_label labels label in
       [ TLoadLabelAdd (r1, lid, lhw, r2) ]

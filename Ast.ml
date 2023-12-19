@@ -47,10 +47,8 @@ type reg =
 (** Available Flags *)
 type flag = Zero | Negative | UnsignedUnderflowFlag | SignedOverflowFlag
 
-type color = color_kind pos
 (** Possible color of the text *)
-
-and color_kind =
+and color =
   | Black
   | Red
   | Green
@@ -68,10 +66,8 @@ and color_kind =
   | BrightCyan
   | BrightWhite
 
-type text_style = text_style_kind pos
 (** Style of the text *)
-
-and text_style_kind =
+and text_style =
   | Bold
   | Faint
   | Italic
@@ -80,6 +76,7 @@ and text_style_kind =
   | Hide
   | Crossed
   | Overline
+  | Default
 
 type text = text_kind pos
 (** A text constant *)
@@ -124,7 +121,7 @@ and inst_kind =
   | Load of reg * reg
   | LoadImmediate of reg * immediate * bool
   | LoadImmediateLabel of reg * label * bool
-  | LoadImmediateAdd of reg * int * bool * reg
+  | LoadImmediateAdd of reg * immediate * bool * reg
   | LoadImmediateAddLabel of reg * label * bool * reg
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)

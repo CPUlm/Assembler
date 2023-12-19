@@ -84,9 +84,9 @@ inst_sans_label:
     | CALL l=LBL            {Some {v=(CallLabel (label_to_pos $loc l));pos = (lexloc_to_pos $loc)}}
     | RET                   {Some {v=Ret; pos=(lexloc_to_pos $loc)}}
     | TEXT                  {None}
-    
 
-    
+
+
 
 
 
