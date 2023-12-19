@@ -1,6 +1,8 @@
 print_string "Hello World!"
 
 let _ =
-  let a = Ast.JmpOffset 0 in
-  let b = CheckAst.process_pseudo a in
+  let a =
+    Ast.{ v = JmpOffset { v = 0; pos = assert false }; pos = assert false }
+  in
+  let b = CheckAst.process_pseudo (assert false) a in
   ignore b

@@ -90,7 +90,7 @@ and text_kind =
   | BackColor of color * text
   | Style of text_style * text
 
-type immediate = Int64.t pos
+type immediate = int pos
 (** An immediate with position *)
 
 type inst = inst_kind pos
@@ -122,8 +122,9 @@ and inst_kind =
   (* Memory operations *)
   | Load of reg * reg
   | LoadImmediate of reg * immediate * bool
-  | LoadImmediateLabel of reg * label * bool
+  | LoadLabel of reg * label * bool
   | LoadImmediateAdd of reg * immediate * bool * reg
+  | LoadLabelAdd of reg * label * bool * reg
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)
   (* Flow instructions *)
@@ -138,14 +139,14 @@ and inst_kind =
   | JmpImmediateCond of flag * immediate
   | Halt
   (* Functions *)
-  | CallLabel of string (* Pseudo instr *)
+  | CallLabel of label (* Pseudo instr *)
   | CallAddr of reg (* Pseudo instr *)
   | Ret (* Pseudo instr *)
 
 type data = data_kind pos
 (** All possible data *)
 
-and data_kind = Text of text | UInt of immediate | Int of immediate
+and data_kind = Ascii of text | Str of text | Int of immediate
 
 type file = {
   text : (label option * inst) list;

@@ -184,8 +184,7 @@ On utilise les notations suivantes pour déclarer des données :
             Cette chaîne n'est pas forcément terminée par \verb|\0|.
       \item[\textbf{\texttt{.string}} \textit{text}] déclare une chaîne de caractère forcément
             terminée par \verb|\0|.
-      \item[\textbf{\texttt{.uint}}] déclare un entier non signé sur $32$ bits (de $0$ à $2^{32}-1$).
-      \item[\textbf{\texttt{.int}}] déclare un entier signé sur $32$ bits (de $-2^{31}$ à $2^{31}-1$).
+      \item[\textbf{\texttt{.int}}] déclare un entier signé sur $32$ bits signé ou non.
 \end{description}
 
 \section*{Instructions}
@@ -306,19 +305,19 @@ faire référence à \texttt{loadi} par \texttt{loadi.l}.
 \noindent
 \begin{tabularx}{\textwidth}{cccc X}
       \toprule
-      Instruction      & Destination & \multicolumn{2}{c}{Arguments} & Description                                                                                     \\
+      Instruction      & Destination & \multicolumn{2}{c}{Arguments} & Description                                                                                      \\
       \midrule
-      \texttt{mov}     & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ dans $r_1$.                                                             \\
-      \texttt{store}   & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ à l'adresse mémoire de $r_1$.                                           \\
-      \texttt{load}    & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie la valeur de la mémoire à l'adresse $r_2$ dans $r_1$.                                     \\
-      \texttt{loadi}   & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i$ (codé sur $16$ bits) dans $r_1$.                                                      \\
-      \texttt{loadi}   & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie $l_l$ dans $r_1$.                                                                         \\
-      \texttt{loadi.h} & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i \ll 16$ dans $r_1$.                                                                    \\
-      \texttt{loadi.h} & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie $l_h$ dans $r_1$.                                                                         \\
-      \texttt{loadi}   & $r_1$       & $i$                           & $r_2$                                                       & Copie $i + r2$ dans $r_1$.        \\
-      \texttt{loadi}   & $r_1$       & $\$l$                         & $r_2$                                                       & Copie $l_l + r2$ dans $r_1$.      \\
-      \texttt{loadi.h} & $r_1$       & $i$                           & $r_2$                                                       & Copie $i \ll 16 + r2$ dans $r_1$. \\
-      \texttt{loadi.h} & $r_1$       & $\$l$                         & $r_2$                                                       & Copie $l_h + f2$ dans $r_1$.      \\
+      \texttt{mov}     & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ dans $r_1$.                                                              \\
+      \texttt{store}   & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ à l'adresse mémoire de $r_1$.                                            \\
+      \texttt{load}    & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie la valeur de la mémoire à l'adresse $r_2$ dans $r_1$.                                      \\
+      \texttt{loadi}   & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i$ (codé sur $16$ bits) dans $r_1$.                                                       \\
+      \texttt{loadi}   & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie $l_l$ dans $r_1$.                                                                          \\
+      \texttt{loadi.h} & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i \ll 16$ dans $r_1$.                                                                     \\
+      \texttt{loadi.h} & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie $l_h$ dans $r_1$.                                                                          \\
+      \texttt{loadi}   & $r_1$       & $i$                           & $r_2$                                                       & Copie $i + r_2$ dans $r_1$.        \\
+      \texttt{loadi}   & $r_1$       & $\$l$                         & $r_2$                                                       & Copie $l_l + r_2$ dans $r_1$.      \\
+      \texttt{loadi.h} & $r_1$       & $i$                           & $r_2$                                                       & Copie $i \ll 16 + r_2$ dans $r_1$. \\
+      \texttt{loadi.h} & $r_1$       & $\$l$                         & $r_2$                                                       & Copie $l_h + r_2$ dans $r_1$.      \\
       \bottomrule
 \end{tabularx}
 
@@ -340,7 +339,7 @@ faire référence à \texttt{loadi} par \texttt{loadi.l}.
       \texttt{jmp}.\textit{F} &             & $i$      & Continue l'exécution du programme à l'adresse $i$ (entier codé sur $16$ bits) lorsque le \textit{flag} $F$ est activé.                      \\
       \texttt{jmp}.\textit{F} &             & $+i$     & Continue l'exécution du programme $i$ adresses (entier codé sur $16$ bits) plus tard lorsque le \textit{flag} $F$ est activé.               \\
       \texttt{jmp}.\textit{F} &             & $-i$     & Continue l'exécution du programme $i$ adresses (entier codé sur $16$ bits) avant lorsque le \textit{flag} $F$ est activé.                   \\
-      \texttt{halt}           &             &          & Saute à l'adresse $2^{32} - 1$.                                                                                                             \\
+      \texttt{halt}           &             &          & Saute à l'adresse $2^{32} - 1$. Les valeurs des registres $r_3$ et $r_4$ sont écrasées.                                                     \\
       \bottomrule
 \end{tabularx}
 
@@ -350,11 +349,11 @@ faire référence à \texttt{loadi} par \texttt{loadi.l}.
 \noindent
 \begin{tabularx}{\textwidth}{ccc X}
       \toprule
-      Instruction   & Destination & Argument & Description                                                          \\
+      Instruction   & Destination & Argument & Description                                                                                                      \\
       \midrule
-      \texttt{call} &             & $\$l$    & Appelle la fonction $l$.                                             \\
-      \texttt{call} &             & $r_1$    & Appelle la fonction à l'adresse $r_1$ du programme.                  \\
-      \texttt{ret}  &             &          & Termine la fonction courante et retourne à l'exécution du programme. \\
+      \texttt{call} &             & $\$l$    & Appelle la fonction $l$.                                                                                         \\
+      \texttt{call} &             & $r_1$    & Appelle la fonction à l'adresse $r_1$ du programme.                                                              \\
+      \texttt{ret}  &             &          & Termine la fonction courante et retourne à l'exécution du programme. La valeur du registre $r_{19}$ est écrasée. \\
       \bottomrule
 \end{tabularx}
 

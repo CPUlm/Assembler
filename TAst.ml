@@ -1,7 +1,37 @@
 open Ast
+open CompileString
 
-type text = Bytes.t
-type data = Text of text | UInt of int | Int of int
+module type Id = sig
+  type t
+
+  val fresh : unit -> t
+  val compare : t -> t -> int
+
+  module Map : Map.S with type key = t
+  module Set : Set.S with type elt = t
+
+  type 'a map = 'a Map.t
+  type set = Set.t
+end
+
+(** A module to manipulate unique ids. *)
+module Label : Id = struct
+  type t = int
+
+  let fresh =
+    let cpt = ref 0 in
+    fun () ->
+      incr cpt;
+      !cpt
+
+  let compare (x : t) (y : t) = Stdlib.compare x y
+
+  module Map = Map.Make (Int)
+  module Set = Set.Make (Int)
+
+  type 'a map = 'a Map.t
+  type set = Set.t
+end
 
 type instr =
   (* Logical Operations *)
@@ -21,13 +51,28 @@ type instr =
   (* Memory operations *)
   | TLoad of reg * reg
   | TLoadImmediateAdd of reg * int * bool * reg
+  | TLoadLabelAdd of reg * Label.t * bool * reg
   | TStore of reg * reg
   (* Flow instructions *)
-  | TJmpLabel of string
-  | TJmpLabelCond of flag * string
+  | TJmpLabel of Label.t
+  | TJmpLabelCond of flag * Label.t
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
   | TJmpOffset of int
   | TJmpOffsetCond of flag * int
   | TJmpImmediate of int
   | TJmpImmediateCond of flag * int
+  (* Function Call *)
+  | TCallAddr of reg
+  | TCallLabel of Label.t
+
+type data = TString of str | TInt of int
+
+module SSet = Set.Make (String)
+module SMap = Map.Make (String)
+
+(** [ret_reg] is the register erased when jumping back to the function. *)
+let ret_reg = R19
+
+(** [halt_reg] is the register erased when halting the program. *)
+let halt_reg = R19
