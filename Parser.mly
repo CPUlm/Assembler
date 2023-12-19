@@ -38,7 +38,7 @@ flag:
     | FLG_V {SignedOverflowFlag}
     | FLG_N {Negative}
 
-inst_sans_label:
+inst_without_label:
     | AND i1=R i2=R i3=R {Some {v=And(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
     | OR  i1=R i2=R i3=R {Some {v=Or(int_to_reg i1,  int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
     | NOR i1=R i2=R i3=R {Some {v=Or(int_to_reg i1,  int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
@@ -86,17 +86,17 @@ inst_sans_label:
     | TEXT                  {None}
 
 inst:
-    | l=LBL CLN i = inst_sans_label {(Some (label_to_pos $loc l),i)}
-    | i =  inst_sans_label {(None,i)}
+    | l=LBL CLN i = inst_without_label {(Some (label_to_pos $loc l),i)}
+    | i =  inst_without_label {(None,i)}
 
-data_sans_label:
+data_without_label:
     | ASCII s=STR {{v=(Ascii ({v=Text s; pos=(lexloc_to_pos $loc)}));pos=(lexloc_to_pos $loc)}}
     | STRING s=STR {{v=(Str ({v=Text s; pos=(lexloc_to_pos $loc)}));pos=(lexloc_to_pos $loc)}}
     | INT u=IMM | UINT u=IMM {{v=(Int (int_to_pos $loc u));pos=(lexloc_to_pos $loc)}}
 
 data:
-    | l=LBL CLN d = data_sans_label {(Some (label_to_pos $loc l), d)}
-    | d=data_sans_label {(None,d)}
+    | l=LBL CLN d = data_without_label {(Some (label_to_pos $loc l), d)}
+    | d=data_without_label {(None,d)}
 
 un_cycle:
     | TEXT l1=separated_list(END_INST,inst) DATA l2=separated_list(END_INST,data) {l1,l2}
