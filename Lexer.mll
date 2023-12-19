@@ -32,12 +32,11 @@ let lower = ['a'-'z'] | '_'
 let upper = ['A'-'Z']
 let other = lower | upper | digit | '\''
 let upperword = upper+
-let dotdecl = '.' lower+
+let directive = '.' lower+
 let integer = '0' | ['1'-'9'] digit*
-let registre=  'R' integer | 'r' integer
-let label = (upper | lower ) (lower | upper | digit)*
+let registre = 'R' integer | 'r' integer
+let label = (upper | lower) (lower | upper | digit)*
 let offset = '+' integer | '-' integer
-
 
 rule gen_tokens = parse
   | '\n'            { Lexing.new_line lexbuf; END_INST}
@@ -56,7 +55,7 @@ rule gen_tokens = parse
     failwith "TODO : include"
   }
   | "loadi.h" {LOADIH}
-  | dotdecl as d {
+  | directive as d {
     match Hashtbl.find_opt str_to_tok d with
     | None -> raise (Lexing_error ("Unknown instruction " ^ d))
     | Some x -> x
