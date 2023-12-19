@@ -147,7 +147,7 @@ type data = data_kind pos
 and data_kind = Ascii of text | Str of text | Int of immediate
 
 type file = {
-  text : (label option * inst) list;
+  text : (label option * inst option) list;
   data : (label option * data) list;
 }
 (** An assembly file, with its data and its text sections. *)

@@ -18,6 +18,10 @@ let label_to_pos (pos: Lexing.position * Lexing.position) (l: string) =
   let p = lexloc_to_pos pos in
 {v=l;pos=p}
 
+let int_to_pos (pos: Lexing.position * Lexing.position) (i:int) =
+  let p = lexloc_to_pos pos in
+  {v=i;pos=p}
+
 (** Convert the current position of the [lexbuf] to a position. *)
 let lexbuf_to_pos lexbuf =
   lexloc_to_pos (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf)

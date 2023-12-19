@@ -36,10 +36,7 @@ let int_to_reg i = match i with
 
 let rec casse_couple l = match l with
   | [] -> [],[]
-  | (None,None)::t -> casse_couple t
-  | (Some a,None)::t -> let l1,l2 = casse_couple t in (a::l1,l2)
-  | (None,Some b)::t-> let l1,l2 = casse_couple t in (l1,b::l2)
-  | (Some a, Some b)::t -> let l1,l2 = casse_couple t in (a::l1,b::l2)
+  | (a,b)::t -> let l1,l2 = casse_couple t in a@l1,b@l2
 
 let format_file l = 
   let l1,l2 = casse_couple l in 
