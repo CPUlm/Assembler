@@ -1,5 +1,3 @@
-open Ast
-
 let usage = "usage: asm [options] file.ulm"
 let parse_only = ref false
 
@@ -29,14 +27,6 @@ let lexbuf =
   Lexing.set_filename lexbuf filename;
   lexbuf
 
-let print_error p msg =
-  if p.beg_line = p.end_line then
-    Format.eprintf "\x1b[1mFile \"%s\", line %d, characters %d-%d:\x1b[0m\n" p.file p.beg_line p.beg_col p.end_col
-  else
-    Format.eprintf "\x1b[1mFile \"%s\", lines %d-%d, characters %d-%d:\x1b[0m\n" p.file p.beg_line p.end_line p.beg_col p.end_col;
-  Format.eprintf "\n\x1b[1;31mError\x1b[0m: %s@." msg;
-  exit 1
-
 let () =
   try
     let ast = Parser.file Lexer.gen_tokens lexbuf in
@@ -51,9 +41,9 @@ let () =
     let s = Lexing.lexeme_start_p lexbuf in
     let e = Lexing.lexeme_end_p lexbuf in
     let p = PositionUtils.lexloc_to_pos (s, e) in
-    print_error p msg
+    ErrorUtils.type_error msg p
   | Parser.Error ->
     let s = Lexing.lexeme_start_p lexbuf in
     let e = Lexing.lexeme_end_p lexbuf in
     let p = PositionUtils.lexloc_to_pos (s, e) in
-    print_error p "syntax error"
+    ErrorUtils.type_error "Syntax error." p
