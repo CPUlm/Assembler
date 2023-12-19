@@ -1,0 +1,9 @@
+.text
+    nop
+
+.data
+a: .ascii #bold(#textcolor(red, "Hello") + " " + #italic(#textcolor("green", "World")))
+b: .ascii #underline("foo" + #blinking(" bar"))
+c: .ascii "test" + #hide("vicious")
+d: .ascii #crossed("1 + 1 = 2")
+f: .ascii #faint("The dog") + #overlined(" " + #default("and") + "the frog")
