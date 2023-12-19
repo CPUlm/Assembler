@@ -15,6 +15,7 @@ let kw_tok = [
   ("$",DOLLAR);(":",CLN);
   ("ROUT",Rout);("SP",SP);("FP",FP);
   ("TEST",TEST); ("HALT",HALT);
+  ("LOADI.H",LOADIH); ("LOADI.L",LOADI);
   ("Z",FLG_Z);("N",FLG_N);("C",FLG_C);("Z",FLG_Z);
   (".ascii",ASCII);(".string",STRING);(".uint",UINT);(".int",INT);
 ]
@@ -33,7 +34,7 @@ let upper = ['A'-'Z']
 let directive = '.' lower+
 let integer = '0' | ['1'-'9'] digit*
 let register = ('R' | 'r') integer
-let identifier = (upper | lower) (lower | upper | digit)*
+let identifier = (upper | lower) (lower | upper | digit | '.')*
 let offset = '+' integer | '-' integer
 
 rule gen_tokens = parse
@@ -52,7 +53,6 @@ rule gen_tokens = parse
   | ".include" {
     failwith "TODO : include"
   }
-  | "loadi.h" {LOADIH}
   | directive as d {
     match Hashtbl.find_opt str_to_tok d with
     | None -> raise (Lexing_error ("Unknown instruction " ^ d))
