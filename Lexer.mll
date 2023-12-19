@@ -34,7 +34,7 @@ let other = lower | upper | digit | '\''
 let upperword = upper+
 let directive = '.' lower+
 let integer = '0' | ['1'-'9'] digit*
-let registre = 'R' integer | 'r' integer
+let register = 'R' integer | 'r' integer
 let label = (upper | lower) (lower | upper | digit)*
 let offset = '+' integer | '-' integer
 
@@ -47,7 +47,7 @@ rule gen_tokens = parse
   | "0b" integer as i {IMM (Int32.of_string i)} (* TODO *)
   | "0x" integer as i {IMM (Int32.of_string i)} (* TODO*)
   | '"'             {string_lex lexbuf}
-  | registre as r {
+  | register as r {
     (* let rnum = String.sub r 1 (String.length r - 1) in *) (* Unused var *)
     R(int_of_string r)
   }
