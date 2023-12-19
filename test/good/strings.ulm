@@ -1,0 +1,7 @@
+.text
+    nop
+
+.data
+a: .ascii "Hello World"
+b: .ascii "the \"assembler\" is \\"
+c: .ascii "the \0 nul character"

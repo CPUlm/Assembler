@@ -1,0 +1,5 @@
+.text
+    nop
+
+.data
+a: .ascii "bad \5 sequence"
