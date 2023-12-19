@@ -2,17 +2,17 @@ open Ast
 open TAst
 open ErrorUtils
 
-let two_32 = Int.shift_left 1 32
-let two_31 = Int.shift_left 1 31
-let neg_two_31 = -two_31
+let two_32 = Int32.shift_left Int32.one 32
+let two_31 = Int32.shift_left Int32.one 31
+let neg_two_31 = Int32.sub Int32.zero two_31
 let signed i = neg_two_31 <= i && i < two_31
-let unsigned i = 0 <= i && i < two_32
+let unsigned i = 0l <= i && i < two_32
 
 let check_immediate imm =
   if signed imm.v || unsigned imm.v then imm.v
   else
     let txt =
-      Format.sprintf "The value '%i' cannot be represented on 16 bit." imm.v
+      Format.sprintf "The value '%ld' cannot be represented on 16 bit." imm.v
     in
     type_error txt imm.pos
 
@@ -21,7 +21,8 @@ let check_signed_immediate imm =
   else
     let txt =
       Format.sprintf
-        "The value '%i' cannot be represented as a 16-bit signed integer." imm.v
+        "The value '%ld' cannot be represented as a 16-bit signed integer."
+        imm.v
     in
     type_error txt imm.pos
 
@@ -30,7 +31,7 @@ let check_unsigned_immediate imm =
   else
     let txt =
       Format.sprintf
-        "The value '%i' cannot be represented as a 16-bit unsigned integer."
+        "The value '%ld' cannot be represented as a 16-bit unsigned integer."
         imm.v
     in
     type_error txt imm.pos
@@ -158,9 +159,9 @@ let process_pseudo labels instr =
   | Halt ->
       [
         (* We set [halt_reg] to 0xffff *)
-        TLoadImmediateAdd (halt_reg, 0xffff, false, R0);
+        TLoadImmediateAdd (halt_reg, 0xffffl, false, R0);
         (* We add 0xffff0000 to [halt_reg] *)
-        TLoadImmediateAdd (halt_reg, 0xffff, true, halt_reg);
+        TLoadImmediateAdd (halt_reg, 0xffffl, true, halt_reg);
         (* We Jump to 0xffffffff (the value of [halt_reg]) *)
         TJmpAddr halt_reg;
       ]

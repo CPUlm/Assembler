@@ -8,23 +8,24 @@ end)
 
 type str = bytes
 
+(** Convert a [color] type to its corresponding value.*)
 let int_of_color = function
-  | Black -> assert false
-  | Red -> assert false
-  | Green -> assert false
-  | Yellow -> assert false
-  | Blue -> assert false
-  | Magenta -> assert false
-  | Cyan -> assert false
-  | White -> assert false
-  | BrightBlack -> assert false
-  | BrightRed -> assert false
-  | BrightGreen -> assert false
-  | BrightYellow -> assert false
-  | BrightBlue -> assert false
-  | BrightMagenta -> assert false
-  | BrightCyan -> assert false
-  | BrightWhite -> assert false
+  | Black -> 0
+  | Red -> 1
+  | Green -> 2
+  | Yellow -> 3
+  | Blue -> 4
+  | Magenta -> 5
+  | Cyan -> 6
+  | White -> 7
+  | BrightBlack -> 8
+  | BrightRed -> 9
+  | BrightGreen -> 10
+  | BrightYellow -> 11
+  | BrightBlue -> 12
+  | BrightMagenta -> 13
+  | BrightCyan -> 14
+  | BrightWhite -> 15
 
 let int_of_style = function
   | Bold -> Int.shift_left 1 0
@@ -37,20 +38,15 @@ let int_of_style = function
   | Overline -> Int.shift_left 1 7
   | Default -> 0
 
-let int_of_styles s =
-  let style_set =
-    List.fold_right
-      (fun s acc -> if s = Default then StyleSet.empty else StyleSet.add s acc)
-      s StyleSet.empty
-  in
-  StyleSet.fold (fun s acc -> int_of_style s lor acc) style_set 0
+let int_of_styles s = StyleSet.fold (fun s acc -> int_of_style s lor acc) s 0
 
-let rec of_text tc bc st_l t =
+let rec of_text tc bc sts t =
   match t.v with
-  | Concat (left, right) -> of_text tc bc st_l left @ of_text tc bc st_l right
-  | TextColor (tc, t) -> of_text tc bc st_l t
-  | BackColor (bc, t) -> of_text tc bc st_l t
-  | Style (st, t) -> of_text tc bc (st :: st_l) t
+  | Concat (left, right) -> of_text tc bc sts left @ of_text tc bc sts right
+  | TextColor (tc, t) -> of_text tc bc sts t
+  | BackColor (bc, t) -> of_text tc bc sts t
+  | Style (Default, t) -> of_text tc bc StyleSet.empty t
+  | Style (st, t) -> of_text tc bc (StyleSet.add st sts) t
   | Text txt ->
       String.fold_right
         (fun chr acc ->

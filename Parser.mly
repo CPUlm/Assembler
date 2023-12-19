@@ -9,7 +9,7 @@
 %token AND NOR XOR OR
 %token LSL ASR LSR
 %token NOT
-%token LOAD STORE LOADI MOV LOADIH
+%token LOAD STORE LOADI MOV LOADIH LOADIA
 %token JMP JMPC JMPI JMPIC
 %token NOP
 %token CALL RET
@@ -18,17 +18,18 @@
 %token END_INST
 %token <string>STR
 %token <string>LBL
-%token <int>IMM
+%token <int32>IMM
 %token DOLLAR CLN (* : *) DOT
 %token EOF
 %token   <int>R
 %token Rout SP  FP
 %token FLG_Z FLG_N FLG_C FLG_V
 %token TEST
-%token <int>OFFS
+%token <int32>OFFS
 %token PLUS MOINS NEG
 %token HALT
 %token ASCII STRING UINT INT
+
 %start<Ast.file> file
 %%
 

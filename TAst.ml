@@ -50,7 +50,7 @@ type instr =
   | TShiftRightLogical of reg * reg * reg
   (* Memory operations *)
   | TLoad of reg * reg
-  | TLoadImmediateAdd of reg * int * bool * reg
+  | TLoadImmediateAdd of reg * int32 * bool * reg
   | TLoadLabelAdd of reg * Label.t * bool * reg
   | TStore of reg * reg
   (* Flow instructions *)
@@ -58,15 +58,15 @@ type instr =
   | TJmpLabelCond of flag * Label.t
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
-  | TJmpOffset of int
-  | TJmpOffsetCond of flag * int
-  | TJmpImmediate of int
-  | TJmpImmediateCond of flag * int
+  | TJmpOffset of int32
+  | TJmpOffsetCond of flag * int32
+  | TJmpImmediate of int32
+  | TJmpImmediateCond of flag * int32
   (* Function Call *)
   | TCallAddr of reg
   | TCallLabel of Label.t
 
-type data = TString of str | TInt of int
+type data = TString of str | TInt of int32
 
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)

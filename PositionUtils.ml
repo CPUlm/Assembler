@@ -14,13 +14,13 @@ let lexloc_to_pos (pos : Lexing.position * Lexing.position) =
     file;
   }
 
-let label_to_pos (pos: Lexing.position * Lexing.position) (l: string) =
+let label_to_pos (pos : Lexing.position * Lexing.position) l : label =
   let p = lexloc_to_pos pos in
-{v=l;pos=p}
+  { v = l; pos = p }
 
-let int_to_pos (pos: Lexing.position * Lexing.position) (i:int) =
+let int_to_pos (pos : Lexing.position * Lexing.position) i : immediate =
   let p = lexloc_to_pos pos in
-  {v=i;pos=p}
+  { v = i; pos = p }
 
 (** Convert the current position of the [lexbuf] to a position. *)
 let lexbuf_to_pos lexbuf =

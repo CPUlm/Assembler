@@ -88,7 +88,7 @@ and text_kind =
   | Style of text_style * text
   | Text of string
 
-type immediate = int pos
+type immediate = int32 pos
 (** An immediate with position *)
 
 type inst = inst_kind pos
