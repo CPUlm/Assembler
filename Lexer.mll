@@ -2,7 +2,8 @@
 open Parser
 
 exception Lexing_error of string
-let kw_tok  = [
+
+let kw_tok = [
   ("ADD",ADD);("SUB",SUB);("MUL",MUL);("DIV",DIV);
   ("AND",AND);("NOR",NOR);("XOR",XOR);("OR",OR);
   ("LSL",LSL);("ASR",ASR);("LSR",LSR);
@@ -16,7 +17,6 @@ let kw_tok  = [
   ("TEST",TEST); ("HALT",HALT);
   ("Z",FLG_Z);("N",FLG_N);("C",FLG_C);("Z",FLG_Z);
   (".ascii",ASCII);(".string",STRING);(".uint",UINT);(".int",INT);
-
 ]
 let string_buffer = Buffer.create 16
 let str_to_tok = Hashtbl.create 100
@@ -30,8 +30,6 @@ let () = List.iter (fun (x,y) -> Hashtbl.add tok_to_str y x) kw_tok
 let digit = ['0'-'9']
 let lower = ['a'-'z'] | '_'
 let upper = ['A'-'Z']
-let other = lower | upper | digit | '\''
-let upperword = upper+
 let directive = '.' lower+
 let integer = '0' | ['1'-'9'] digit*
 let register = ('R' | 'r') integer
@@ -87,8 +85,8 @@ and string_lex = parse
     (* | "\\n"  {Buffer.add_char string_buffer '\n'; string_lex lexbuf } *)
     (* | "\\t"  {Buffer.add_char string_buffer '\t'; string_lex lexbuf } *)
     (* | "\\a"   {print_string "pas sûr pour \a"; Buffer.add_char string_buffer '\a'} *)
-    | "\n"   {raise (Lexing_error "String non terminée avant de changer de ligne")}
+    | "\n"   {raise (Lexing_error "Unterminated string")}
     | _ as c {Buffer.add_char string_buffer c; string_lex lexbuf}
-    | eof       {raise (Lexing_error "String non terminée")}
+    | eof       {raise (Lexing_error "Unterminated string")}
 
 { }
