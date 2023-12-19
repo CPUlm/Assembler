@@ -30,6 +30,7 @@ let lexbuf =
 let ast = Parser.file Lexer.gen_tokens lexbuf
 
 let () =
+  ignore ast;
   let a =
     Ast.{ v = JmpOffset { v = 0l; pos = assert false }; pos = assert false }
   in
