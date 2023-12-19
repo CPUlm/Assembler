@@ -13,7 +13,7 @@ let kw_tok  = [
   ("PUSH",PUSH);("POP",POP);
   ("$",DOLLAR);(":",CLN);
   ("ROUT",Rout);("SP",SP);("FP",FP);
-  ("test",TEST); ("halt",HALT);
+  ("TEST",TEST); ("HALT",HALT);
   ("Z",FLG_Z);("N",FLG_N);("C",FLG_C);("Z",FLG_Z);
   (".ascii",ASCII);(".string",STRING);(".uint",UINT);(".int",INT);
 
@@ -34,8 +34,8 @@ let other = lower | upper | digit | '\''
 let upperword = upper+
 let directive = '.' lower+
 let integer = '0' | ['1'-'9'] digit*
-let register = 'R' integer | 'r' integer
-let label = (upper | lower) (lower | upper | digit)*
+let register = ('R' | 'r') integer
+let identifier = (upper | lower) (lower | upper | digit)*
 let offset = '+' integer | '-' integer
 
 rule gen_tokens = parse
@@ -63,13 +63,11 @@ rule gen_tokens = parse
   | '$' {DOLLAR}
   | ':' {CLN}
   | offset as o {OFFS (Int32.of_string o)}
-  | upperword as u {
-    match Hashtbl.find_opt str_to_tok u with
-    | None -> LBL u
-    | Some x -> x
-  }
-  | label as l {
-    LBL l
+  | identifier as i {
+    let uppercase = String.uppercase_ascii i in
+    match Hashtbl.find_opt str_to_tok uppercase with
+    | None -> LBL i (* labels are not case-sensitive so return i and not uppercase *)
+    | Some x -> x (* we matched an instruction name *)
   }
 
 and line_comment = parse
