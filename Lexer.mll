@@ -4,6 +4,7 @@ open Parser
 exception Lexing_error of string
 
 let kw_tok = [
+  (* Instructions *)
   ("ADD",ADD);("SUB",SUB);("MUL",MUL);("DIV",DIV);
   ("AND",AND);("NOR",NOR);("XOR",XOR);("OR",OR);
   ("LSL",LSL);("ASR",ASR);("LSR",LSR);
@@ -12,12 +13,23 @@ let kw_tok = [
   ("NOP",NOP); ("NEG",NEG); ("NOT",NOT);
   ("CALL",CALL);("RET",RET);
   ("PUSH",PUSH);("POP",POP);
-  ("$",DOLLAR);(":",CLN);
   ("ROUT",Rout);("SP",SP);("FP",FP);
   ("TEST",TEST); ("HALT",HALT);
   ("LOADI.H",LOADIH); ("LOADI.L",LOADI);
-  ("Z",FLG_Z);("N",FLG_N);("C",FLG_C);("Z",FLG_Z);
-  (".ascii",ASCII);(".string",STRING);(".uint",UINT);(".int",INT);
+
+  (* Flags *)
+  ("Z",FLG_Z);
+  ("N",FLG_N);
+  ("C",FLG_C);
+  ("Z",FLG_Z);
+
+  (* Supported directives *)
+  (".text", TEXT);
+  (".data", DATA);
+  (".ascii", ASCII);
+  (".string", STRING);
+  (".uint", UINT);
+  (".int", INT);
 ]
 let string_buffer = Buffer.create 16
 let str_to_tok = Hashtbl.create 100
