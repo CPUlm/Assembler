@@ -71,7 +71,7 @@ rule gen_tokens = parse
 and line_comment = parse
   | '\n'            {gen_tokens lexbuf}
   | eof             {EOF}
-  | _               {gen_tokens lexbuf}
+  | _               {line_comment lexbuf}
 
 and string_lex = parse
 (* Est-ce qu'on gère la fin en \ ? Si oui j'ai le code, juste à l'ajouter. *)
