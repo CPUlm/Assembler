@@ -2,6 +2,9 @@
     open Ast
     open Funcs
     open PositionUtils
+
+    let mk_inst loc inst =
+        Some { v = inst; pos = lexloc_to_pos loc }
 %}
 
 %token ADD SUB MUL DIV
@@ -39,50 +42,50 @@ flag:
     | FLG_N {Negative}
 
 inst_without_label:
-    | AND i1=R i2=R i3=R {Some {v=And(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | OR  i1=R i2=R i3=R {Some {v=Or(int_to_reg i1,  int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | NOR i1=R i2=R i3=R {Some {v=Or(int_to_reg i1,  int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | XOR i1=R i2=R i3=R {Some {v=Xor(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | NOT i1=R i2=R      {Some {v=Not(int_to_reg i1, int_to_reg i2)               ;pos=(lexloc_to_pos $loc)}}
-    | ADD i1=R i2=R i3=R {Some {v=Add(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | SUB i1=R i2=R i3=R {Some {v=Sub(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | MUL i1=R i2=R i3=R {Some {v=Mul(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | DIV i1=R i2=R i3=R {Some {v=Div(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | NEG i1=R i2=R      {Some {v=Neg(int_to_reg i1, int_to_reg i2);pos=(lexloc_to_pos $loc)}}
-    | NOP                {Some {v=Nop;pos=(lexloc_to_pos $loc)}}
-    | LSL i1=R i2=R i3=R {Some {v=ShiftLeftLogical(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | ASR i1=R i2=R i3=R {Some {v=ShiftRightArith(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | LSR i1=R i2=R i3=R {Some {v=ShiftRightLogical(int_to_reg i1, int_to_reg i2, int_to_reg i3);pos=(lexloc_to_pos $loc)}}
-    | PUSH i1=R          {Some {v=Push(int_to_reg i1);pos=(lexloc_to_pos $loc)}}
-    | POP i1=R           {Some {v=Pop(int_to_reg i1);pos=(lexloc_to_pos $loc)}}
-    | LOAD i1=R i2=R     {Some {v=Load(int_to_reg i1, int_to_reg i2);pos=(lexloc_to_pos $loc)}}
+    | AND i1=R i2=R i3=R { mk_inst $loc (And(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | OR  i1=R i2=R i3=R { mk_inst $loc (Or(int_to_reg i1,  int_to_reg i2, int_to_reg i3)) }
+    | NOR i1=R i2=R i3=R { mk_inst $loc (Or(int_to_reg i1,  int_to_reg i2, int_to_reg i3)) }
+    | XOR i1=R i2=R i3=R { mk_inst $loc (Xor(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | NOT i1=R i2=R      { mk_inst $loc (Not(int_to_reg i1, int_to_reg i2)               ) }
+    | ADD i1=R i2=R i3=R { mk_inst $loc (Add(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | SUB i1=R i2=R i3=R { mk_inst $loc (Sub(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | MUL i1=R i2=R i3=R { mk_inst $loc (Mul(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | DIV i1=R i2=R i3=R { mk_inst $loc (Div(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | NEG i1=R i2=R      { mk_inst $loc (Neg(int_to_reg i1, int_to_reg i2)) }
+    | NOP                { mk_inst $loc (Nop) }
+    | LSL i1=R i2=R i3=R { mk_inst $loc (ShiftLeftLogical(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | ASR i1=R i2=R i3=R { mk_inst $loc (ShiftRightArith(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | LSR i1=R i2=R i3=R { mk_inst $loc (ShiftRightLogical(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
+    | PUSH i1=R          { mk_inst $loc (Push(int_to_reg i1)) }
+    | POP i1=R           { mk_inst $loc (Pop(int_to_reg i1)) }
+    | LOAD i1=R i2=R     { mk_inst $loc (Load(int_to_reg i1, int_to_reg i2)) }
 
-    | LOADI i1=R i=IMM   {Some {v=LoadImmediate(int_to_reg i1,(int_to_pos $loc i),false);pos = (lexloc_to_pos $loc)}}
-    | LOADI i1=R l=LBL   {Some {v=LoadImmediateLabel(int_to_reg i1,label_to_pos $loc l,false); pos = (lexloc_to_pos $loc)}}
-    | LOADI i1=R i=IMM i2=R {Some {v=LoadImmediateAdd(int_to_reg i1,(int_to_pos $loc i),false,int_to_reg i2); pos = (lexloc_to_pos $loc)}}
-    | LOADI i1=R l=LBL i2=R {Some {v=LoadImmediateAddLabel(int_to_reg i1,(label_to_pos $loc l),false,int_to_reg i2); pos = (lexloc_to_pos $loc)}}
+    | LOADI i1=R i=IMM   { mk_inst $loc (LoadImmediate(int_to_reg i1,(int_to_pos $loc i),false)) }
+    | LOADI i1=R l=LBL   { mk_inst $loc (LoadImmediateLabel(int_to_reg i1,label_to_pos $loc l,false)) }
+    | LOADI i1=R i=IMM i2=R { mk_inst $loc (LoadImmediateAdd(int_to_reg i1,(int_to_pos $loc i),false,int_to_reg i2)) }
+    | LOADI i1=R l=LBL i2=R { mk_inst $loc (LoadImmediateAddLabel(int_to_reg i1,(label_to_pos $loc l),false,int_to_reg i2)) }
 
-    | LOADIH i1=R i=IMM   {Some {v=LoadImmediate(int_to_reg i1,(int_to_pos $loc i),true);pos = (lexloc_to_pos $loc)}}
-    | LOADIH i1=R l=LBL   {Some {v=LoadImmediateLabel(int_to_reg i1,label_to_pos $loc l,true); pos = (lexloc_to_pos $loc)}}
-    | LOADIH i1=R i=IMM i2=R {Some {v=LoadImmediateAdd(int_to_reg i1,(int_to_pos $loc i),true,int_to_reg i2); pos = (lexloc_to_pos $loc)}}
-    | LOADIH i1=R l=LBL i2=R {Some {v=LoadImmediateAddLabel(int_to_reg i1,label_to_pos $loc l,true,int_to_reg i2); pos = (lexloc_to_pos $loc)}}
+    | LOADIH i1=R i=IMM   { mk_inst $loc (LoadImmediate(int_to_reg i1,(int_to_pos $loc i),true)) }
+    | LOADIH i1=R l=LBL   { mk_inst $loc (LoadImmediateLabel(int_to_reg i1,label_to_pos $loc l,true)) }
+    | LOADIH i1=R i=IMM i2=R { mk_inst $loc (LoadImmediateAdd(int_to_reg i1,(int_to_pos $loc i),true,int_to_reg i2)) }
+    | LOADIH i1=R l=LBL i2=R { mk_inst $loc (LoadImmediateAddLabel(int_to_reg i1,label_to_pos $loc l,true,int_to_reg i2)) }
 
-    | STORE i1=R i2=R    {Some {v=Store(int_to_reg i1, int_to_reg i2);pos=(lexloc_to_pos $loc)}}
-    | MOV i1=R i2=R      {Some {v=Mov(int_to_reg i1, int_to_reg i2);pos=(lexloc_to_pos $loc)}}
-    | TEST i1=R          {Some {v=Test(int_to_reg i1);pos=(lexloc_to_pos $loc)}}
-    | JMP i=IMM          {Some {v=JmpImmediate(int_to_pos $loc i);pos=(lexloc_to_pos $loc)}}
-    | JMP o=OFFS         {Some {v=JmpOffset (int_to_pos $loc o);pos=(lexloc_to_pos $loc)}}
-    | JMP l=LBL          {Some {v=JmpLabel (label_to_pos $loc l); pos=(lexloc_to_pos $loc)}}
-    | JMP i=R          {Some {v=JmpAddr (int_to_reg i); pos=(lexloc_to_pos $loc)}}
-    | JMP DOT f=flag  i=IMM {Some {v=JmpImmediateCond (f,(int_to_pos $loc i));pos=(lexloc_to_pos $loc)}}
-    | JMP DOT f=flag  o=OFFS {Some {v=JmpOffsetCond (f,(int_to_pos $loc o));pos=(lexloc_to_pos $loc)}}
-    | JMP DOT f=flag  l=LBL {Some {v=JmpLabelCond (f,label_to_pos $loc l);pos=(lexloc_to_pos $loc)}}
-    | JMP DOT f=flag  i=IMM {Some {v=JmpImmediateCond (f,(int_to_pos $loc i));pos=(lexloc_to_pos $loc)}}
-    | JMP DOT f=flag  i=R   {Some {v=JmpAddrCond (f,int_to_reg i); pos=(lexloc_to_pos $loc)}}
-    | HALT                  {Some {v=Halt; pos = (lexloc_to_pos $loc)}}
-    | CALL i=R              {Some {v=(CallAddr (int_to_reg i));pos = (lexloc_to_pos $loc)}}
-    | CALL l=LBL            {Some {v=(CallLabel (label_to_pos $loc l));pos = (lexloc_to_pos $loc)}}
-    | RET                   {Some {v=Ret; pos=(lexloc_to_pos $loc)}}
+    | STORE i1=R i2=R    { mk_inst $loc (Store(int_to_reg i1, int_to_reg i2)) }
+    | MOV i1=R i2=R      { mk_inst $loc (Mov(int_to_reg i1, int_to_reg i2)) }
+    | TEST i1=R          { mk_inst $loc (Test(int_to_reg i1)) }
+    | JMP i=IMM          { mk_inst $loc (JmpImmediate(int_to_pos $loc i)) }
+    | JMP o=OFFS         { mk_inst $loc (JmpOffset (int_to_pos $loc o)) }
+    | JMP l=LBL          { mk_inst $loc (JmpLabel (label_to_pos $loc l)) }
+    | JMP i=R          { mk_inst $loc (JmpAddr (int_to_reg i)) }
+    | JMP DOT f=flag  i=IMM { mk_inst $loc (JmpImmediateCond (f,(int_to_pos $loc i))) }
+    | JMP DOT f=flag  o=OFFS { mk_inst $loc (JmpOffsetCond (f,(int_to_pos $loc o))) }
+    | JMP DOT f=flag  l=LBL { mk_inst $loc (JmpLabelCond (f,label_to_pos $loc l)) }
+    | JMP DOT f=flag  i=IMM { mk_inst $loc (JmpImmediateCond (f,(int_to_pos $loc i))) }
+    | JMP DOT f=flag  i=R   { mk_inst $loc (JmpAddrCond (f,int_to_reg i)) }
+    | HALT                  { mk_inst $loc Halt }
+    | CALL i=R              { mk_inst $loc (CallAddr (int_to_reg i)) }
+    | CALL l=LBL            { mk_inst $loc (CallLabel (label_to_pos $loc l)) }
+    | RET                   { mk_inst $loc Ret }
     | TEXT                  {None}
 
 inst:
