@@ -1,11 +1,11 @@
 (executable
  (name Assembler))
 
-; (ocamllex
-;  (modules Lexer))
+(ocamllex
+ (modules Lexer))
 
-; (menhir
-;  (modules Parser))
+(menhir
+ (modules Parser))
 
 (env
  (dev

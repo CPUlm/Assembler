@@ -7,13 +7,14 @@ let kw_tok  = [
   ("LSL",LSL);("ASR",ASR);("LSR";LSR);
   ("LOAD",LOAD);("STORE",STORE);("LOADI",LOADI);("LOADIA",LOADIA);
   ("JMP",JMP);("JMPC",JMPC);("JMPI",JMPI);("JMPIC";JMPIC);
-  ("NOP",NOP);
+  ("NOP",NOP); ("NEG",NEG); ("NOT",NOT);
   ("CALL",CALL);("RET",RET);
   ("PUSH",PUSH);("POP",POP);
   ("$",DOLLAR);(":",CLN);
   ("ROUT",Rout);("SP",SP);("FP",FP);
-  ("test",TEST);
+  ("test",TEST); ("halt",HALT);
   ("Z",FLG_Z);("N",FLG_N);("C",FLG_C);("Z",FLG_Z);
+  (".ascii",ASCII);(".string",STRING);(".uint",UINT);(".int",INT);
 
 ]
 let string_buffer = Buffer.create 16
@@ -34,7 +35,7 @@ let dotdecl = '.' lower+
 let integer = '0' | ['1'-'9'] digit*
 let registre=  'R' integer | 'r' integer
 let label = (upper | lower ) (lower | upper | digit)*
-
+let offset = '+' integer | '-' integer
 
 
 rule gen_tokens = parse
@@ -53,6 +54,7 @@ rule gen_tokens = parse
   | ".include" {
     raise (Lexing_error "TODO : include")
   }
+  | "loadi.h" {LOADIH}
   | dotdecl as d {
     match Hashtbl.find_opt str_to_tok d with
     | None -> raise (Lexing_error ("Unknown instruction " ^ d))
@@ -60,6 +62,7 @@ rule gen_tokens = parse
   }
   | '$' {DOLLAR}
   | ':' {CLN}
+  | offset as o {OFFS (int_of_string o)}
   | upperword as u {
     match Hashtbl.find_opt str_to_tok u with
     | None -> LBL u
@@ -68,7 +71,6 @@ rule gen_tokens = parse
   | label as l {
     LBL l
   }
-
 
 and line_comment = parse
   | '\n'            {gen_tokens lexbuf}

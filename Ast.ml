@@ -89,6 +89,7 @@ and text_kind =
   | TextColor of color * text
   | BackColor of color * text
   | Style of text_style * text
+  | Text of string
 
 type immediate = int pos
 (** An immediate with position *)
@@ -122,9 +123,9 @@ and inst_kind =
   (* Memory operations *)
   | Load of reg * reg
   | LoadImmediate of reg * immediate * bool
-  | LoadLabel of reg * label * bool
-  | LoadImmediateAdd of reg * immediate * bool * reg
-  | LoadLabelAdd of reg * label * bool * reg
+  | LoadImmediateLabel of reg * label * bool
+  | LoadImmediateAdd of reg * int * bool * reg
+  | LoadImmediateAddLabel of reg * label * bool * reg
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)
   (* Flow instructions *)
