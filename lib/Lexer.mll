@@ -3,102 +3,187 @@ open Parser
 
 exception Lexing_error of string
 
-let kw_tok = [
-  (* Instructions *)
-  ("ADD",ADD);("SUB",SUB);("MUL",MUL);("DIV",DIV);
-  ("AND",AND);("NOR",NOR);("XOR",XOR);("OR",OR);
-  ("LSL",LSL);("ASR",ASR);("LSR",LSR);
-  ("LOAD",LOAD);("STORE",STORE);("LOADI",LOADI);("LOADIA",LOADIA);
-  ("JMP",JMP);("JMPC",JMPC);("JMPI",JMPI);("JMPIC",JMPIC);
-  ("NOP",NOP); ("NEG",NEG); ("NOT",NOT);
-  ("CALL",CALL);("RET",RET);
-  ("PUSH",PUSH);("POP",POP);
-  ("ROUT",Rout);("SP",SP);("FP",FP);
-  ("TEST",TEST); ("HALT",HALT);
-  ("LOADI.H",LOADIH); ("LOADI.L",LOADI);
+let string_buffer = Buffer.create 128
 
-  (* Flags *)
-  ("Z",FLG_Z);
-  ("N",FLG_N);
-  ("C",FLG_C);
-  ("Z",FLG_Z);
+let resolve_instruction =
+  let instructions = Hashtbl.create 37 in
+  List.iter (fun (s, l) -> Hashtbl.add instructions s l)
+        (
+        [
+          ("add",ADD);
+          ("sub",SUB);
+          ("mul",MUL);
+          ("div",DIV);
+          ("and",AND);
+          ("nor",NOR);
+          ("xor",XOR);
+          ("or",OR);
+          ("lsl",LSL);
+          ("asr",ASR);
+          ("lsr",LSR);
+          ("load",LOAD);
+          ("store",STORE);
+          ("loadi",LOADI);
+          ("loadi.h",LOADIH);
+          ("loadi.l",LOADI);
+          ("jmp",JMP);
+          ("jmp.z",JMPC Ast.Zero);
+          ("jmp.n",JMPC Ast.Negative);
+          ("jmp.c",JMPC Ast.UnsignedUnderflowFlag);
+          ("jmp.v",JMPC Ast.SignedOverflowFlag);
+          ("nop",NOP);
+          ("neg",NEG);
+          ("not",NOT);
+          ("call",CALL);
+          ("ret",RET);
+          ("push",PUSH);
+          ("pop",POP);
+          ("rout",ROUT);
+          ("sp",SP);
+          ("fp",FP);
+          ("rpriv",RPRIV);
+          ("test",TEST);
+          ("halt",HALT);
+          ("inc",INC);
+          ("dec",DEC);
+          ("mov",MOV);
+        ]
+        );
+  fun s ->
+    try
+      (* We canonicalize identifiers to lowercase because instructions names
+          are case insensitive (that is ADD and add are the same). *)
+      Hashtbl.find instructions (String.lowercase_ascii s)
+    with Not_found -> IDENT s
 
-  (* Supported directives *)
-  (".text", TEXT);
-  (".data", DATA);
-  (".ascii", ASCII);
-  (".string", STRING);
-  (".uint", UINT);
-  (".int", INT);
-]
-let string_buffer = Buffer.create 16
-let str_to_tok = Hashtbl.create 100
+let resolve_directive =
+  let directives = Hashtbl.create 6 in
+  List.iter (fun (s, l) -> Hashtbl.add directives s l)
+        (
+        [
+          (".text", TEXT);
+          (".data", DATA);
+          (".ascii", ASCII);
+          (".string", STRING);
+          (".uint", UINT);
+          (".int", INT);
+          (* TODO: add support for .include *)
+        ]
+        );
+  fun s -> try Hashtbl.find directives s with Not_found -> raise (Lexing_error ("Unknown directive " ^ s))
 
-let () = List.iter (fun (x,y) -> Hashtbl.add str_to_tok x y) kw_tok
-let tok_to_str = Hashtbl.create 100
-let () = List.iter (fun (x,y) -> Hashtbl.add tok_to_str y x) kw_tok
-
+let resolve_text_inst =
+  let text_instructions = Hashtbl.create 11 in
+  List.iter (fun (s, l) -> Hashtbl.add text_instructions s l)
+        (
+        [
+          ("#textcolor",TXTCOL);
+          ("#backcolor",BCKCOL);
+          ("#bold",BOLD);
+          ("#faint",FAINT);
+          ("#italic",ITALIC);
+          ("#underline",UNDERLINE);
+          ("#blinking",BLINKING);
+          ("#hide",HIDE);
+          ("#crossed",CROSSED);
+          ("#overlined",OVERLINE);
+          ("#default",DEFAULT);
+        ]
+        );
+  fun s -> try Hashtbl.find text_instructions s with Not_found -> raise (Lexing_error ("Unknown text instruction " ^ s))
 }
 
+let eol = '\n' | '\r' '\n' | '\r'
 let digit = ['0'-'9']
 let lower = ['a'-'z'] | '_'
 let upper = ['A'-'Z']
 let directive = '.' lower+
-let integer = '0' | ['1'-'9'] digit*
-let register = ('R' | 'r') integer
+let dec_integer = '0' | ['1'-'9'] digit*
+let bin_integer = "0b" ('0' | '1')+
+let hex_integer = "0b" (['0'-'9' 'a'-'f' 'A'-'F'])+
+let integer = dec_integer | bin_integer | hex_integer
+let register = ('R' | 'r') dec_integer
 let identifier = (upper | lower) (lower | upper | digit | '.')*
-let offset = '+' integer | '-' integer
+let offset = ('+' | '-') dec_integer
+let label = "$" identifier
+let text_inst = '#' identifier
 
-rule gen_tokens = parse
-  | '\n'            { Lexing.new_line lexbuf; END_INST}
-  | ' ' | '\t'      { gen_tokens lexbuf }
-  | eof             { EOF }
-  | ';'             {line_comment lexbuf}
-  | integer as i    {IMM((Int32.of_string i))}
-  | "0b" integer as i {IMM (Int32.of_string i)} (* TODO *)
-  | "0x" integer as i {IMM (Int32.of_string i)} (* TODO*)
-  | '"'             {string_lex lexbuf}
-  | register as r {
-    (* let rnum = String.sub r 1 (String.length r - 1) in *) (* Unused var *)
-    R(int_of_string r)
-  }
-  | ".include" {
-    failwith "TODO : include"
-  }
-  | directive as d {
-    match Hashtbl.find_opt str_to_tok d with
-    | None -> raise (Lexing_error ("Unknown instruction " ^ d))
-    | Some x -> x
-  }
-  | '$' {DOLLAR}
-  | ':' {CLN}
-  | offset as o {OFFS (Int32.of_string o)}
-  | identifier as i {
-    let uppercase = String.uppercase_ascii i in
-    match Hashtbl.find_opt str_to_tok uppercase with
-    | None -> LBL i (* labels are not case-sensitive so return i and not uppercase *)
-    | Some x -> x (* we matched an instruction name *)
-  }
+rule next_token = parse
+  | eol { Lexing.new_line lexbuf; NEWLINE }
+  | ' ' | '\t' { next_token lexbuf }
+  | eof { EOF }
+  | ';' { line_comment lexbuf }
+  | ',' { COMMA }
+  | '+' { PLUS }
+  | ':' { COLON }
+  | '(' { LPAR }
+  | ')' { RPAR }
+  | '"' { string_lex lexbuf }
+
+  | integer as i
+    { IMM((Int32.of_string i)) }
+
+  | directive as d
+    { resolve_directive d }
+
+  | label as l
+    {
+      let name = String.sub l 1 (String.length l - 1) in
+      LBL name
+    }
+
+  | offset as o
+    { OFFS (Int32.of_string o) }
+
+  | register as r
+    {
+      let rnum = String.sub r 1 (String.length r - 1) in
+      R(int_of_string rnum)
+    }
+
+  | identifier as i
+    { resolve_instruction i }
+
+  | text_inst as i
+    { resolve_text_inst i }
+
+  | _ as c
+    { raise (Lexing_error ("Illegal character: " ^ String.make 1 c )) }
 
 and line_comment = parse
-  | '\n'            {gen_tokens lexbuf}
-  | eof             {EOF}
-  | _               {line_comment lexbuf}
+  | eol
+    { Lexing.new_line lexbuf; NEWLINE }
+
+  | eof
+    { EOF }
+
+  | _
+    { line_comment lexbuf }
 
 and string_lex = parse
-(* Est-ce qu'on gère la fin en \ ? Si oui j'ai le code, juste à l'ajouter. *)
-    | '"' {
+    | '"'
+      {
         let s = Buffer.contents string_buffer in
         Buffer.reset string_buffer;
         STR s
-    }
-    | "\\\"" {Buffer.add_char string_buffer '"'; string_lex lexbuf }
-    (* No in the spec, we can't display \n or \t on out screen :/ *)
-    (* | "\\n"  {Buffer.add_char string_buffer '\n'; string_lex lexbuf } *)
-    (* | "\\t"  {Buffer.add_char string_buffer '\t'; string_lex lexbuf } *)
-    (* | "\\a"   {print_string "pas sûr pour \a"; Buffer.add_char string_buffer '\a'} *)
-    | "\n"   {raise (Lexing_error "Unterminated string.")}
-    | _ as c {Buffer.add_char string_buffer c; string_lex lexbuf}
-    | eof       {raise (Lexing_error "Unterminated string.")}
+      }
+
+    | "\\\""
+      { Buffer.add_char string_buffer '"'; string_lex lexbuf }
+
+    | "\\\\"
+      { Buffer.add_char string_buffer '\\'; string_lex lexbuf }
+
+    | "\\0"
+      { Buffer.add_char string_buffer '\x00'; string_lex lexbuf }
+
+    | "\\" _ as e
+      { raise (Lexing_error ("Invalid escape sequence " ^ e ^ " in string.")) }
+
+    | "\n" | eof
+      { raise (Lexing_error "Unterminated string.") }
+
+    | _ as c
+      { Buffer.add_char string_buffer c; string_lex lexbuf }
 
 { }

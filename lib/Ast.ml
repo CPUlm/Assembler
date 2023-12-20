@@ -43,6 +43,7 @@ type reg =
   | ROut
   | SP
   | FP
+  | PrivateReg
 
 (** Available Flags *)
 type flag = Zero | Negative | UnsignedUnderflowFlag | SignedOverflowFlag

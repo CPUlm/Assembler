@@ -1,110 +1,181 @@
 %{
-    open Ast
-    open ParsingUtils
-    open PositionUtils
+  open Ast
+  open ParsingUtils
+  open PositionUtils
 
-    let mk_inst loc inst =
-        Some { v = inst; pos = lexloc_to_pos loc }
+  let mk_pos loc data =
+      { v = data; pos = lexloc_to_pos loc }
 %}
 
-%token ADD SUB MUL DIV
-%token AND NOR XOR OR
-%token LSL ASR LSR
-%token NOT
-%token LOAD STORE LOADI MOV LOADIH LOADIA
-%token JMP JMPC JMPI JMPIC
-%token NOP
-%token CALL RET
-%token PUSH POP
-%token DATA TEXT
-%token END_INST
+%token EOF
+%token NEWLINE
 %token <string> STR
 %token <string> LBL
+%token <string> IDENT
 %token <int32> IMM
-%token DOLLAR CLN (* : *) DOT
-%token EOF
-%token <int> R
-%token Rout SP FP
-%token FLG_Z FLG_N FLG_C FLG_V
-%token TEST
+%token COLON
 %token <int32> OFFS
-%token PLUS MOINS NEG
-%token HALT
-%token ASCII STRING UINT INT
+
+(* Instructions *)
+%token ADD SUB MUL DIV AND NOR XOR OR LSL ASR LSR NOT NOP CALL RET TEST NEG
+%token LOAD STORE LOADI MOV JMP LOADIH PUSH POP HALT INC DEC
+%token <Ast.flag> JMPC
+
+(* Directives *)
+%token DATA TEXT ASCII STRING UINT INT
+
+(* Registers *)
+%token <int> R
+%token ROUT SP FP RPRIV
+
+(* String instructions *)
+%token PLUS
+%token LPAR RPAR COMMA TXTCOL BCKCOL BOLD FAINT ITALIC
+%token UNDERLINE BLINKING HIDE CROSSED OVERLINE DEFAULT
+%left PLUS
 
 %start<Ast.file> file
 %%
 
-flag:
-    | FLG_C {UnsignedUnderflowFlag}
-    | FLG_Z {Zero}
-    | FLG_V {SignedOverflowFlag}
-    | FLG_N {Negative}
+%inline reg:
+  | ROUT { ROut }
+  | SP { SP }
+  | FP { FP }
+  | RPRIV { PrivateReg }
+  | r=R { int_to_reg r }
 
 inst_without_label:
-    | AND i1=R i2=R i3=R { mk_inst $loc (And(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | OR  i1=R i2=R i3=R { mk_inst $loc (Or(int_to_reg i1,  int_to_reg i2, int_to_reg i3)) }
-    | NOR i1=R i2=R i3=R { mk_inst $loc (Or(int_to_reg i1,  int_to_reg i2, int_to_reg i3)) }
-    | XOR i1=R i2=R i3=R { mk_inst $loc (Xor(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | NOT i1=R i2=R      { mk_inst $loc (Not(int_to_reg i1, int_to_reg i2)               ) }
-    | ADD i1=R i2=R i3=R { mk_inst $loc (Add(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | SUB i1=R i2=R i3=R { mk_inst $loc (Sub(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | MUL i1=R i2=R i3=R { mk_inst $loc (Mul(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | DIV i1=R i2=R i3=R { mk_inst $loc (Div(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | NEG i1=R i2=R      { mk_inst $loc (Neg(int_to_reg i1, int_to_reg i2)) }
-    | NOP                { mk_inst $loc (Nop) }
-    | LSL i1=R i2=R i3=R { mk_inst $loc (ShiftLeftLogical(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | ASR i1=R i2=R i3=R { mk_inst $loc (ShiftRightArith(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | LSR i1=R i2=R i3=R { mk_inst $loc (ShiftRightLogical(int_to_reg i1, int_to_reg i2, int_to_reg i3)) }
-    | PUSH i1=R          { mk_inst $loc (Push(int_to_reg i1)) }
-    | POP i1=R           { mk_inst $loc (Pop(int_to_reg i1)) }
-    | LOAD i1=R i2=R     { mk_inst $loc (Load(int_to_reg i1, int_to_reg i2)) }
-
-    | LOADI i1=R i=IMM   { mk_inst $loc (LoadImmediate(int_to_reg i1,(int_to_pos $loc i),false)) }
-    | LOADI i1=R l=LBL   { mk_inst $loc (LoadImmediateLabel(int_to_reg i1,label_to_pos $loc l,false)) }
-    | LOADI i1=R i=IMM i2=R { mk_inst $loc (LoadImmediateAdd(int_to_reg i1,(int_to_pos $loc i),false,int_to_reg i2)) }
-    | LOADI i1=R l=LBL i2=R { mk_inst $loc (LoadImmediateAddLabel(int_to_reg i1,(label_to_pos $loc l),false,int_to_reg i2)) }
-
-    | LOADIH i1=R i=IMM   { mk_inst $loc (LoadImmediate(int_to_reg i1,(int_to_pos $loc i),true)) }
-    | LOADIH i1=R l=LBL   { mk_inst $loc (LoadImmediateLabel(int_to_reg i1,label_to_pos $loc l,true)) }
-    | LOADIH i1=R i=IMM i2=R { mk_inst $loc (LoadImmediateAdd(int_to_reg i1,(int_to_pos $loc i),true,int_to_reg i2)) }
-    | LOADIH i1=R l=LBL i2=R { mk_inst $loc (LoadImmediateAddLabel(int_to_reg i1,label_to_pos $loc l,true,int_to_reg i2)) }
-
-    | STORE i1=R i2=R    { mk_inst $loc (Store(int_to_reg i1, int_to_reg i2)) }
-    | MOV i1=R i2=R      { mk_inst $loc (Mov(int_to_reg i1, int_to_reg i2)) }
-    | TEST i1=R          { mk_inst $loc (Test(int_to_reg i1)) }
-    | JMP i=IMM          { mk_inst $loc (JmpImmediate(int_to_pos $loc i)) }
-    | JMP o=OFFS         { mk_inst $loc (JmpOffset (int_to_pos $loc o)) }
-    | JMP l=LBL          { mk_inst $loc (JmpLabel (label_to_pos $loc l)) }
-    | JMP i=R          { mk_inst $loc (JmpAddr (int_to_reg i)) }
-    | JMP DOT f=flag  i=IMM { mk_inst $loc (JmpImmediateCond (f,(int_to_pos $loc i))) }
-    | JMP DOT f=flag  o=OFFS { mk_inst $loc (JmpOffsetCond (f,(int_to_pos $loc o))) }
-    | JMP DOT f=flag  l=LBL { mk_inst $loc (JmpLabelCond (f,label_to_pos $loc l)) }
-    // | JMP DOT f=flag  i=IMM { mk_inst $loc (JmpImmediateCond (f,(int_to_pos $loc i))) } // repeating
-    | JMP DOT f=flag  i=R   { mk_inst $loc (JmpAddrCond (f,int_to_reg i)) }
-    | HALT                  { mk_inst $loc Halt }
-    | CALL i=R              { mk_inst $loc (CallAddr (int_to_reg i)) }
-    | CALL l=LBL            { mk_inst $loc (CallLabel (label_to_pos $loc l)) }
-    | RET                   { mk_inst $loc Ret }
-    | TEXT                  {None}
+  | AND r1=reg r2=reg r3=reg   { mk_pos $loc (And (r1, r2, r3)) }
+  | OR  r1=reg r2=reg r3=reg   { mk_pos $loc (Or (r1,  r2, r3)) }
+  | NOR r1=reg r2=reg r3=reg   { mk_pos $loc (Or (r1,  r2, r3)) }
+  | XOR r1=reg r2=reg r3=reg   { mk_pos $loc (Xor (r1, r2, r3)) }
+  | NOT r1=reg r2=reg          { mk_pos $loc (Not (r1, r2)) }
+  | ADD r1=reg r2=reg r3=reg   { mk_pos $loc (Add (r1, r2, r3)) }
+  | SUB r1=reg r2=reg r3=reg   { mk_pos $loc (Sub (r1, r2, r3)) }
+  | MUL r1=reg r2=reg r3=reg   { mk_pos $loc (Mul (r1, r2, r3)) }
+  | DIV r1=reg r2=reg r3=reg   { mk_pos $loc (Div (r1, r2, r3)) }
+  | NEG r1=reg r2=reg          { mk_pos $loc (Neg (r1, r2)) }
+  | INC r1=reg r2=reg          { mk_pos $loc (Incr (r1, r2)) }
+  | DEC r1=reg r2=reg          { mk_pos $loc (Decr (r1, r2)) }
+  | NOP                        { mk_pos $loc (Nop) }
+  | LSL r1=reg r2=reg r3=reg   { mk_pos $loc (ShiftLeftLogical (r1, r2, r3)) }
+  | ASR r1=reg r2=reg r3=reg   { mk_pos $loc (ShiftRightArith (r1, r2, r3)) }
+  | LSR r1=reg r2=reg r3=reg   { mk_pos $loc (ShiftRightLogical (r1, r2, r3)) }
+  | PUSH r=reg                 { mk_pos $loc (Push r) }
+  | POP r=reg                  { mk_pos $loc (Pop r) }
+  | LOAD r1=reg r2=reg         { mk_pos $loc (Load (r1, r2)) }
+  | LOADI r1=reg i=IMM         { mk_pos $loc (LoadImmediate (r1, int_to_pos $loc i, false)) }
+  | LOADI r1=reg l=LBL         { mk_pos $loc (LoadImmediateLabel (r1, label_to_pos $loc l, false)) }
+  | LOADI r1=reg i=IMM r2=reg  { mk_pos $loc (LoadImmediateAdd (r1, int_to_pos $loc i, false, r2)) }
+  | LOADI r1=reg l=LBL r2=reg  { mk_pos $loc (LoadImmediateAddLabel (r1, label_to_pos $loc l, false, r2)) }
+  | LOADIH r1=reg i=IMM        { mk_pos $loc (LoadImmediate (r1, int_to_pos $loc i,true)) }
+  | LOADIH r1=reg l=LBL        { mk_pos $loc (LoadImmediateLabel (r1, label_to_pos $loc l, true)) }
+  | LOADIH r1=reg i=IMM r2=reg { mk_pos $loc (LoadImmediateAdd (r1, int_to_pos $loc i, true, r2)) }
+  | LOADIH r1=reg l=LBL r2=reg { mk_pos $loc (LoadImmediateAddLabel (r1, label_to_pos $loc l, true, r2)) }
+  | STORE r1=reg r2=reg        { mk_pos $loc (Store (r1, r2)) }
+  | MOV r1=reg r2=reg          { mk_pos $loc (Mov (r1, r2)) }
+  | TEST r=reg                 { mk_pos $loc (Test r) }
+  | JMP i=IMM                  { mk_pos $loc (JmpImmediate (int_to_pos $loc i)) }
+  | JMP o=OFFS                 { mk_pos $loc (JmpOffset (int_to_pos $loc o)) }
+  | JMP l=LBL                  { mk_pos $loc (JmpLabel (label_to_pos $loc l)) }
+  | JMP r=reg                  { mk_pos $loc (JmpAddr r) }
+  | f=JMPC i=IMM               { mk_pos $loc (JmpImmediateCond (f, int_to_pos $loc i)) }
+  | f=JMPC o=OFFS              { mk_pos $loc (JmpOffsetCond (f, int_to_pos $loc o)) }
+  | f=JMPC l=LBL               { mk_pos $loc (JmpLabelCond (f, label_to_pos $loc l)) }
+  | f=JMPC r=reg               { mk_pos $loc (JmpAddrCond (f, r)) }
+  | HALT                       { mk_pos $loc Halt }
+  | CALL r=reg                 { mk_pos $loc (CallAddr r) }
+  | CALL l=LBL                 { mk_pos $loc (CallLabel (label_to_pos $loc l)) }
+  | RET                        { mk_pos $loc Ret }
 
 inst:
-    | l=LBL CLN i = inst_without_label {(Some (label_to_pos $loc l),i)}
-    | i =  inst_without_label {(None,i)}
+  | l=IDENT COLON NEWLINE* i = inst_without_label { (Some (label_to_pos $loc l), i) }
+  | i = inst_without_label { (None, i) }
+
+color:
+  | i=IDENT | i=STR
+      { 
+          match str_to_col i with
+          | Some c -> c
+          | None -> ErrorUtils.type_error ("Unknown color " ^ i) (Some (lexloc_to_pos $loc))
+      }
+
+styled_string:
+  | s=STR { (Text s) }
+  | t1=styled_string PLUS t2=styled_string {
+      (Concat (t1,t2))
+  }
+  | TXTCOL LPAR c=color COMMA t=styled_string RPAR {
+      (TextColor (c, t))
+  }
+  | BCKCOL LPAR c=color COMMA t=styled_string RPAR {
+      (BackColor (c, t))
+  }
+  | BOLD LPAR t=styled_string RPAR {
+      (Style (Bold,t))
+  }
+  | FAINT LPAR t=styled_string RPAR {
+      (Style (Faint,t))
+  }
+  | BLINKING LPAR t=styled_string RPAR {
+      (Style (Blinking,t))
+  }
+  | ITALIC LPAR t=styled_string RPAR {
+      (Style (Italic,t))
+  }
+  | UNDERLINE LPAR t=styled_string RPAR {
+      (Style (Underline,t))
+  }
+  | HIDE LPAR t=styled_string RPAR {
+      (Style (Hide,t))
+  }
+  | CROSSED LPAR t=styled_string RPAR {
+      (Style (Crossed,t))
+  }
+  | OVERLINE LPAR t=styled_string RPAR {
+      (Style (Overline,t))
+  }
+  | DEFAULT LPAR t=styled_string RPAR {
+      (Style (Default,t))
+  }
 
 data_without_label:
-    | ASCII s=STR {{v=(Ascii (Text s));pos=(lexloc_to_pos $loc)}}
-    | STRING s=STR {{v=(Str (Text s));pos=(lexloc_to_pos $loc)}}
-    | INT u=IMM | UINT u=IMM {{v=(Int (int_to_pos $loc u));pos=(lexloc_to_pos $loc)}}
+  | ASCII s=styled_string  { mk_pos $loc (Ascii s) }
+  | STRING s=styled_string { mk_pos $loc (Str s) }
+  | INT u=IMM | UINT u=IMM { mk_pos $loc (Int (int_to_pos $loc u)) }
 
 data:
-    | l=LBL CLN d = data_without_label {(Some (label_to_pos $loc l), d)}
-    | d=data_without_label {(None,d)}
+  | l=IDENT COLON NEWLINE* d = data_without_label { (Some (label_to_pos $loc l), d) }
+  | d=data_without_label { (None, d) }
 
-un_cycle:
-    | TEXT l1=separated_list(END_INST,inst) DATA l2=separated_list(END_INST,data) {l1,l2}
+text_section:
+  | i=inst NEWLINE+ s=text_section
+    { (Either.Left i) :: s }
+  | i=inst
+    { [Either.Left i] }
+  |
+    { [] }
+  | DATA NEWLINE* d=data_section
+    { d }
+
+data_section:
+  | i=data NEWLINE+ s=data_section
+    { (Either.Right i) :: s }
+  | i=data
+    { [Either.Right i] }
+  |
+    { [] }
+  | TEXT NEWLINE* d=text_section
+    { d }
+
+sections:
+  | TEXT NEWLINE* s=text_section
+    { s }
+  | DATA NEWLINE* s=data_section
+    { s }
 
 file:
-    | l=un_cycle* EOF {
-        format_file l
-    }
+  | s=sections EOF {
+      let text, data = List.partition_map (fun i -> i) s in
+      { text; data }
+  }

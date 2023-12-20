@@ -33,7 +33,7 @@ let int_to_reg i =
   | 26 -> R26
   | 27 -> R27
   | 28 -> R28
-  | _ -> raise (Except ("Unknown register : " ^ string_of_int i))
+  | _ -> raise (Except ("Unknown register r" ^ string_of_int i))
 
 let rec casse_couple l =
   match l with
@@ -54,3 +54,28 @@ let rec casse_couple l =
 let format_file l =
   let l1, l2 = casse_couple l in
   { text = l1; data = l2 }
+
+let str_to_col = 
+  let colors = Hashtbl.create 11 in
+  List.iter (fun (s, l) -> Hashtbl.add colors s l)
+    (
+    [
+      ("black", Black);
+      ("red", Red);
+      ("green", Green);
+      ("yellow", Yellow);
+      ("blue", Blue);
+      ("magenta", Magenta);
+      ("cyan", Cyan);
+      ("white", White);
+      ("brightblack", BrightBlack);
+      ("brightred", BrightRed);
+      ("brightgreen", BrightGreen);
+      ("brightyellow", BrightYellow);
+      ("brightblue", BrightBlue);
+      ("brightmagenta", BrightMagenta);
+      ("brightcyan", BrightCyan);
+      ("brightwhite", BrightWhite);
+    ]
+    );
+  fun s -> Hashtbl.find_opt colors s
