@@ -61,7 +61,7 @@ done
 echo
 
 echo -e "\033[32m[----------] WARNINGS GOOD\033[0m"
-for f in test/warnings/bad/*.ulm; do
+for f in test/warnings/good/*.ulm; do
     max=`expr $max + 1`;
     compile --fatal-warnings $f;
     case $? in
