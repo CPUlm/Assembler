@@ -208,6 +208,9 @@ let pre_encode_instr data_sections f =
       (ProgrammLabel.Set.empty, SSet.empty, SSet.empty)
       prog_sections
   in
+  (* Mark main label as used to avoid useless warnings about it. It it always
+     used implictly as the entry point of the program. *)
+  let used_prog_lbl = SSet.add "main" used_prog_lbl in
   let unused_prog_label =
     SMap.filter (fun i _ -> SSet.mem i used_prog_lbl |> not) prog_labels
   in
