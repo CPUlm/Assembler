@@ -8,7 +8,6 @@
 %}
 
 %token EOF
-%token NEWLINE
 %token <string> STR
 %token <string> LBL
 %token <string> IDENT
@@ -89,7 +88,7 @@ inst_without_label:
   | RET                        { mk_pos $loc Ret }
 
 inst:
-  | l=IDENT COLON NEWLINE* i = inst_without_label { (Some (label_to_pos $loc l), i) }
+  | l=IDENT COLON i = inst_without_label { (Some (label_to_pos $loc l), i) }
   | i = inst_without_label { (None, i) }
 
 color:
@@ -145,33 +144,33 @@ data_without_label:
   | INT u=IMM | UINT u=IMM { mk_pos $loc (Int (int_to_pos $loc u)) }
 
 data:
-  | l=IDENT COLON NEWLINE* d = data_without_label { (Some (label_to_pos $loc l), d) }
+  | l=IDENT COLON d = data_without_label { (Some (label_to_pos $loc l), d) }
   | d=data_without_label { (None, d) }
 
 text_section:
-  | i=inst NEWLINE+ s=text_section
+  | i=inst s=text_section
     { (Either.Left i) :: s }
   | i=inst
     { [Either.Left i] }
   |
     { [] }
-  | DATA NEWLINE* d=data_section
+  | DATA d=data_section
     { d }
 
 data_section:
-  | i=data NEWLINE+ s=data_section
+  | i=data s=data_section
     { (Either.Right i) :: s }
   | i=data
     { [Either.Right i] }
   |
     { [] }
-  | TEXT NEWLINE* d=text_section
+  | TEXT d=text_section
     { d }
 
 sections:
-  | TEXT NEWLINE* s=text_section
+  | TEXT s=text_section
     { s }
-  | DATA NEWLINE* s=data_section
+  | DATA s=data_section
     { s }
 
 file:

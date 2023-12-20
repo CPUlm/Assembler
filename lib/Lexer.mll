@@ -100,7 +100,7 @@ let upper = ['A'-'Z']
 let directive = '.' lower+
 let dec_integer = '0' | ['1'-'9'] digit*
 let bin_integer = "0b" ('0' | '1')+
-let hex_integer = "0b" (['0'-'9' 'a'-'f' 'A'-'F'])+
+let hex_integer = "0x" (['0'-'9' 'a'-'f' 'A'-'F'])+
 let integer = dec_integer | bin_integer | hex_integer
 let register = ('R' | 'r') dec_integer
 let identifier = (upper | lower) (lower | upper | digit | '.')*
@@ -109,7 +109,7 @@ let label = "$" identifier
 let text_inst = '#' identifier
 
 rule next_token = parse
-  | eol { Lexing.new_line lexbuf; NEWLINE }
+  | eol { Lexing.new_line lexbuf; next_token lexbuf }
   | ' ' | '\t' { next_token lexbuf }
   | eof { EOF }
   | ';' { line_comment lexbuf }
@@ -152,7 +152,7 @@ rule next_token = parse
 
 and line_comment = parse
   | eol
-    { Lexing.new_line lexbuf; NEWLINE }
+    { Lexing.new_line lexbuf; next_token lexbuf }
 
   | eof
     { EOF }
