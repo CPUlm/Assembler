@@ -1,5 +1,8 @@
 open TAst
 
+(** True if warnings should be treated as errors. *)
+let fatal_warnings = ref false
+
 let pp_error_head ppf (pos : Ast.position) =
   let begin_col, end_col = (pos.beg_col + 1, pos.end_col + 1) in
   if pos.beg_line = pos.end_line then
@@ -13,18 +16,21 @@ let pp_error_head ppf (pos : Ast.position) =
 let pp_severity color ppf severity =
   Format.fprintf ppf "\x1b[1;%sm%s\x1b[0m" color severity
 
-let warning txt (pos : Ast.position option) =
-  (match pos with
-  | None -> ()
-  | Some pos -> Format.eprintf "%a@." pp_error_head pos);
-  Format.eprintf "%a: %s@." (pp_severity "33") "Warning" txt
-
 let type_error txt (pos : Ast.position option) =
   (match pos with
   | None -> ()
   | Some pos -> Format.eprintf "%a@." pp_error_head pos);
   Format.eprintf "%a: %s@." (pp_severity "31") "Error" txt;
   exit 1
+
+let warning txt (pos : Ast.position option) =
+  if !fatal_warnings then
+    type_error (txt ^ " (promoted warning)") pos
+  else
+    (match pos with
+    | None -> ()
+    | Some pos -> Format.eprintf "%a@." pp_error_head pos);
+    Format.eprintf "%a: %s@." (pp_severity "33") "Warning" txt
 
 let rec pp_slist f ppf l =
   match l with
