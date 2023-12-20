@@ -1,4 +1,4 @@
-all: asm doc
+all: asm
 
 asm:
 	dune build bin/main.exe
