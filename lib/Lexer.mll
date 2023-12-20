@@ -183,6 +183,12 @@ and string_lex = parse
     | "\n" | eof
       { raise (Lexing_error "Unterminated string.") }
 
+    | [^'\x20'-'\x7E'] as c
+      { 
+        let msg = Format.sprintf "Non printable character %#x in string." (Char.code c) in
+        raise (Lexing_error msg) 
+      }
+
     | _ as c
       { Buffer.add_char string_buffer c; string_lex lexbuf }
 
