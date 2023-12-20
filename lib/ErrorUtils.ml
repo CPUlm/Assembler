@@ -38,5 +38,5 @@ let pp_slist f ppf l =
   | [ x ] -> Format.pp_print_string ppf (f x)
   | l -> pp_slist f ppf l
 
-let pp_sset ppf s = (pp_slist Fun.id) ppf (SSet.to_list s)
-let pp_smap ppf s = (pp_slist fst) ppf (SMap.to_list s)
+let pp_sset ppf s = (pp_slist Fun.id) ppf (SSet.elements s)
+let pp_smap ppf s = (pp_slist fst) ppf (SMap.bindings s)
