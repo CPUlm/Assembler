@@ -32,7 +32,10 @@ let int_to_reg i =
   | 25 -> R25
   | 26 -> R26
   | 27 -> R27
-  | 28 -> R28
+  | 28 -> ROut
+  | 29 -> SP
+  | 30 -> FP
+  | 31 -> PrivateReg
   | _ -> raise (Except ("Unknown register : " ^ string_of_int i))
 
 let rec casse_couple l =

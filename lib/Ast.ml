@@ -39,10 +39,10 @@ type reg =
   | R25
   | R26
   | R27
-  | R28
   | ROut
   | SP
   | FP
+  | PrivateReg
 
 (** Available Flags *)
 type flag = Zero | Negative | UnsignedUnderflowFlag | SignedOverflowFlag

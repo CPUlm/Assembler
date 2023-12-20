@@ -40,10 +40,10 @@ module SSet = Set.Make (String)
 module SMap = Map.Make (String)
 
 (** [ret_reg] is the register erased when jumping back to the function. *)
-let ret_reg = R19
+let ret_reg = PrivateReg
 
 (** [halt_reg] is the register erased when halting the program. *)
-let halt_reg = R19
+let halt_reg = PrivateReg
 
 (** [default_text_color] : Default Text Color *)
 let default_text_color = Black

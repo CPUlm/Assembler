@@ -69,9 +69,7 @@ _opam/
 ## Build tool auxiliary files:
 *.fdb_latexmk
 *.synctex
-*.synctex(busy)
 *.synctex.gz
-*.synctex.gz(busy)
 *.pdfsync
 
 ## Build tool directories for auxiliary files
@@ -344,3 +342,5 @@ TSWLatexianTemp*
 .vscode
 asm
 **/*.conflicts
+
+test.ulm

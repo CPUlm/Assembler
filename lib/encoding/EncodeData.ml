@@ -79,7 +79,7 @@ let of_text t =
               in
               (* Pack everything in bytes *)
               let b = Bytes.create 4 in
-              Bytes.set_int32_be b 0 v;
+              Bytes.set_int32_le b 0 v;
               (Int32.add size 1l, b :: acc))
             txt (0l, [])
         in
@@ -103,7 +103,7 @@ let encode_section sec =
         | TString (size, str) -> (Int32.add cur_pos size, data @ [ str ])
         | TInt i ->
             let b = Bytes.create 4 in
-            Bytes.set_int32_be b 0 i;
+            Bytes.set_int32_le b 0 i;
             (Int32.add cur_pos 1l, data @ [ b ]))
       (0l, []) sec
   in
