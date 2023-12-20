@@ -1,6 +1,6 @@
 %{
     open Ast
-    open Funcs
+    open ParsingUtils
     open PositionUtils
 
     let mk_inst loc inst =
@@ -93,8 +93,8 @@ inst:
     | i =  inst_without_label {(None,i)}
 
 data_without_label:
-    | ASCII s=STR {{v=(Ascii ({v=Text s; pos=(lexloc_to_pos $loc)}));pos=(lexloc_to_pos $loc)}}
-    | STRING s=STR {{v=(Str ({v=Text s; pos=(lexloc_to_pos $loc)}));pos=(lexloc_to_pos $loc)}}
+    | ASCII s=STR {{v=(Ascii (Text s));pos=(lexloc_to_pos $loc)}}
+    | STRING s=STR {{v=(Str (Text s));pos=(lexloc_to_pos $loc)}}
     | INT u=IMM | UINT u=IMM {{v=(Int (int_to_pos $loc u));pos=(lexloc_to_pos $loc)}}
 
 data:

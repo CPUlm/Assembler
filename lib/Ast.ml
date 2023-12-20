@@ -78,10 +78,8 @@ and text_style =
   | Overline
   | Default
 
-type text = text_kind pos
 (** A text constant *)
-
-and text_kind =
+and text =
   | Concat of text * text
   | TextColor of color * text
   | BackColor of color * text
@@ -147,7 +145,7 @@ type data = data_kind pos
 and data_kind = Ascii of text | Str of text | Int of immediate
 
 type file = {
-  text : (label option * inst option) list;
+  text : (label option * inst) list;
   data : (label option * data) list;
 }
 (** An assembly file, with its data and its text sections. *)

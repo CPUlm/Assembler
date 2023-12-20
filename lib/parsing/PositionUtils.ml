@@ -28,7 +28,9 @@ let lexbuf_to_pos lexbuf =
 
 (** Merge the beginning of [p1] with the end of [p2]. *)
 let merge_pos p1 p2 =
-  if p1.file <> p2.file then assert false
+  if p1.file <> p2.file then
+    raise
+      (Invalid_argument "Cannot merge position that are not in the same file")
   else { p1 with end_line = p2.end_line; end_col = p2.end_col }
 
 (** This is the position of the end of file. *)

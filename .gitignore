@@ -341,3 +341,5 @@ TSWLatexianTemp*
 # glossaries
 *.glstex
 
+.vscode
+asm

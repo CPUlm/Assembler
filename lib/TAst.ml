@@ -1,39 +1,6 @@
 open Ast
-open CompileString
 
-module type Id = sig
-  type t
-
-  val fresh : unit -> t
-  val compare : t -> t -> int
-
-  module Map : Map.S with type key = t
-  module Set : Set.S with type elt = t
-
-  type 'a map = 'a Map.t
-  type set = Set.t
-end
-
-(** A module to manipulate unique ids. *)
-module Label : Id = struct
-  type t = int
-
-  let fresh =
-    let cpt = ref 0 in
-    fun () ->
-      incr cpt;
-      !cpt
-
-  let compare (x : t) (y : t) = Stdlib.compare x y
-
-  module Map = Map.Make (Int)
-  module Set = Set.Make (Int)
-
-  type 'a map = 'a Map.t
-  type set = Set.t
-end
-
-type instr =
+type tinstr =
   (* Logical Operations *)
   | TAnd of reg * reg * reg
   | TOr of reg * reg * reg
@@ -51,11 +18,12 @@ type instr =
   (* Memory operations *)
   | TLoad of reg * reg
   | TLoadImmediateAdd of reg * int32 * bool * reg
-  | TLoadLabelAdd of reg * Label.t * bool * reg
+  | TLoadProgLabelAdd of reg * string * bool * reg
+  | TLoadDataLabelAdd of reg * int32 * bool * reg
   | TStore of reg * reg
   (* Flow instructions *)
-  | TJmpLabel of Label.t
-  | TJmpLabelCond of flag * Label.t
+  | TJmpLabel of string
+  | TJmpLabelCond of flag * string
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
   | TJmpOffset of int32
@@ -64,9 +32,9 @@ type instr =
   | TJmpImmediateCond of flag * int32
   (* Function Call *)
   | TCallAddr of reg
-  | TCallLabel of Label.t
+  | TCallLabel of string
 
-type data = TString of str | TInt of int32
+type data = TString of (int32 * bytes) | TInt of int32
 
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)
@@ -76,3 +44,11 @@ let ret_reg = R19
 
 (** [halt_reg] is the register erased when halting the program. *)
 let halt_reg = R19
+
+(** [default_text_color] : Default Text Color *)
+let default_text_color = Black
+
+(** [default_background_color] : Default Background Color *)
+let default_background_color = White
+
+type data_section = { data : bytes; size : int32; mapping : int32 SMap.t }

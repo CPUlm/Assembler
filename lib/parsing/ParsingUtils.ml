@@ -40,6 +40,15 @@ let rec casse_couple l =
   | [] -> ([], [])
   | (a, b) :: t ->
       let l1, l2 = casse_couple t in
+      let a =
+        List.fold_left
+          (fun acc (a1, a2) ->
+            match (a1, a2) with
+            | None, None -> acc
+            | a1, Some i -> acc @ [ (a1, i) ]
+            | Some _, None -> failwith "A label without instruction ?!")
+          [] a
+      in
       (a @ l1, b @ l2)
 
 let format_file l =

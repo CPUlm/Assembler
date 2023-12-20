@@ -1,0 +1,10 @@
+(include_subdirs unqualified)
+
+(library
+ (name LibUlmAssembly))
+
+(ocamllex
+ (modules Lexer))
+
+(menhir
+ (modules Parser))
