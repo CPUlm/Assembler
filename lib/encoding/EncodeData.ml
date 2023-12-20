@@ -46,7 +46,7 @@ let of_text t =
     | Concat (left, right) ->
         let left_size, left_str = of_text tc bc sts left in
         let right_size, right_str = of_text tc bc sts right in
-        ( Int32.add left_size right_size,
+        ( left_size + right_size,
           Bytes.concat Bytes.empty [ left_str; right_str ] )
     | TextColor (tc, t) -> of_text tc bc sts t
     | BackColor (bc, t) -> of_text tc bc sts t
@@ -80,8 +80,8 @@ let of_text t =
               (* Pack everything in bytes *)
               let b = Bytes.create 4 in
               Bytes.set_int32_le b 0 v;
-              (Int32.add size 1l, b :: acc))
-            txt (0l, [])
+              (size + 1, b :: acc))
+            txt (0, [])
         in
         (text_size, Bytes.concat Bytes.empty text_bytes)
   in
@@ -100,12 +100,12 @@ let encode_section sec =
     List.fold_left
       (fun (cur_pos, data) i ->
         match process_data i with
-        | TString (size, str) -> (Int32.add cur_pos size, data @ [ str ])
+        | TString (size, str) -> (cur_pos + size, data @ [ str ])
         | TInt i ->
             let b = Bytes.create 4 in
             Bytes.set_int32_le b 0 i;
-            (Int32.add cur_pos 1l, data @ [ b ]))
-      (0l, []) sec
+            (cur_pos + 1, data @ [ b ]))
+      (0, []) sec
   in
   (size, Bytes.concat Bytes.empty bytes_list)
 
@@ -120,9 +120,9 @@ let encode_data (f : file) =
       (fun (cur_pos, data, mapping) (sec_name, sec) ->
         let sec_size, sec_bytes = encode_section sec in
         let mapping = SMap.add sec_name cur_pos mapping in
-        let cur_pos = Int32.add cur_pos sec_size in
+        let cur_pos = cur_pos + sec_size in
         (cur_pos, data @ [ sec_bytes ], mapping))
-      (0l, [], SMap.empty) data_decls
+      (0, [], SMap.empty) data_decls
   in
   let data = Bytes.concat Bytes.empty data in
   { data; size; mapping }

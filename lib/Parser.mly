@@ -11,9 +11,9 @@
 %token <string> STR
 %token <string> LBL
 %token <string> IDENT
-%token <int32> IMM
+%token <int> IMM
 %token COLON
-%token <int32> OFFS
+%token <int> OFFS
 
 (* Instructions *)
 %token ADD SUB MUL DIV AND NOR XOR OR LSL ASR LSR NOT NOP CALL RET TEST NEG

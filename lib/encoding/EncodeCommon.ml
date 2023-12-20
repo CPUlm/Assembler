@@ -1,28 +1,27 @@
 open Ast
 open ErrorUtils
 
-let two_32 = Int32.(shift_left one 32)
-let two_31 = Int32.(shift_left one 31)
-let neg_two_31 = Int32.(sub zero two_31)
+let two_32 = 1 lsl 32
+let two_31 = 1 lsl 31
+let neg_two_31 = -two_31
 let _signed i = neg_two_31 <= i && i < two_31
-let _unsigned i = 0l <= i && i < two_32
+let _unsigned i = 0 <= i && i < two_32
 
 let check_signed_immediate imm =
-  if _signed imm.v then imm.v
+  if _signed imm.v then Int32.of_int imm.v
   else
     let txt =
       Format.sprintf
-        "The value '%ld' cannot be represented as a 16-bit signed integer."
-        imm.v
+        "The value '%d' cannot be represented as a 16-bit signed integer." imm.v
     in
     type_error txt (Some imm.pos)
 
 let check_unsigned_immediate imm =
-  if _unsigned imm.v then imm.v
+  if _unsigned imm.v then Int32.of_int imm.v
   else
     let txt =
       Format.sprintf
-        "The value '%ld' cannot be represented as a 16-bit unsigned integer."
+        "The value '%d' cannot be represented as a 16-bit unsigned integer."
         imm.v
     in
     type_error txt (Some imm.pos)
@@ -32,7 +31,7 @@ let check_immediate imm =
   else if _signed imm.v then check_signed_immediate imm
   else
     let txt =
-      Format.sprintf "The value '%ld' cannot be represented on 16 bit." imm.v
+      Format.sprintf "The value '%d' cannot be represented on 16 bit." imm.v
     in
     type_error txt (Some imm.pos)
 

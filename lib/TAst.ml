@@ -1,5 +1,9 @@
 open Ast
 
+let _ =
+  if Sys.int_size < 33 then
+    failwith "The size of the integers available is not large enough."
+
 module type Id = sig
   type t
 
@@ -64,7 +68,7 @@ module ProgrammAddress = struct
 end
 
 module DataAddress = struct
-  type t = int32
+  type t = int
 end
 
 (** The mode of the load *)
@@ -104,7 +108,7 @@ type tinstr =
   | TCallAddr of reg
   | TCallLabel of ProgrammLabel.t
 
-type data = TString of (int32 * bytes) | TInt of int32
+type data = TString of (int * bytes) | TInt of int32
 
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)
@@ -121,4 +125,4 @@ let default_text_color = Black
 (** [default_background_color] : Default Background Color *)
 let default_background_color = White
 
-type data_section = { data : bytes; size : int32; mapping : int32 SMap.t }
+type data_section = { data : bytes; size : int; mapping : int SMap.t }

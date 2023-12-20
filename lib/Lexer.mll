@@ -119,7 +119,7 @@ rule next_token = parse
   | '"' { string_lex lexbuf }
 
   | integer as i
-    { IMM((Int32.of_string i)) }
+    { IMM (int_of_string i) }
 
   | directive as d
     { resolve_directive d }
@@ -131,7 +131,7 @@ rule next_token = parse
     }
 
   | offset as o
-    { OFFS (Int32.of_string o) }
+    { OFFS (int_of_string o) }
 
   | register as r
     {
@@ -148,13 +148,13 @@ rule next_token = parse
   | ['\x20'-'\x7E'] as c
     {
       let msg = Format.sprintf "Illegal character '%c'in code." c in
-      raise (Lexing_error msg) 
+      raise (Lexing_error msg)
     }
 
   | _ as c
-    { 
+    {
       let msg = Format.sprintf "Illegal character '\\x%x'in code." (Char.code c) in
-      raise (Lexing_error msg) 
+      raise (Lexing_error msg)
     }
 
 and line_comment = parse
@@ -191,9 +191,9 @@ and string_lex = parse
       { raise (Lexing_error "Unterminated string.") }
 
     | [^'\x20'-'\x7E'] as c
-      { 
+      {
         let msg = Format.sprintf "Non printable character '\\x%x' in string." (Char.code c) in
-        raise (Lexing_error msg) 
+        raise (Lexing_error msg)
       }
 
     | _ as c
