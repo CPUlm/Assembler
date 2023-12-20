@@ -1,0 +1,7 @@
+.text
+main:
+    nop
+
+; main label redeclared
+main:
+    nop

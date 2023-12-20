@@ -1,0 +1,3 @@
+.data
+    ; Missing a label for the first instruction
+    .ascii "foo"
