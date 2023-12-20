@@ -147,8 +147,17 @@ rule next_token = parse
   | text_inst as i
     { resolve_text_inst i }
 
+  | ['\x20'-'\x7E'] as c
+    {
+      let msg = Format.sprintf "Illegal character '%c'in code." c in
+      raise (Lexing_error msg) 
+    }
+
   | _ as c
-    { raise (Lexing_error ("Illegal character: " ^ String.make 1 c )) }
+    { 
+      let msg = Format.sprintf "Illegal character '\\x%x'in code." (Char.code c) in
+      raise (Lexing_error msg) 
+    }
 
 and line_comment = parse
   | eol
@@ -178,14 +187,14 @@ and string_lex = parse
       { Buffer.add_char string_buffer '\x00'; string_lex lexbuf }
 
     | "\\" _ as e
-      { raise (Lexing_error ("Invalid escape sequence " ^ e ^ " in string.")) }
+      { raise (Lexing_error ("Invalid escape sequence '" ^ e ^ "' in string.")) }
 
     | "\n" | eof
       { raise (Lexing_error "Unterminated string.") }
 
     | [^'\x20'-'\x7E'] as c
       { 
-        let msg = Format.sprintf "Non printable character %#x in string." (Char.code c) in
+        let msg = Format.sprintf "Non printable character '\\x%x' in string." (Char.code c) in
         raise (Lexing_error msg) 
       }
 
