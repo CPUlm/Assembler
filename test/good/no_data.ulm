@@ -1,0 +1,4 @@
+.text
+main: nop
+
+; no data section

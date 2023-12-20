@@ -1,0 +1,8 @@
+.text
+main:
+    nop
+
+.data
+; ❤️ is an unicode character which is encoded in UTF-8. The resulting sequence
+; contains non printable ASCII characters.
+a: .ascii "foo ❤️"
