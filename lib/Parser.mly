@@ -80,7 +80,7 @@ inst_without_label:
     | JMP DOT f=flag  i=IMM { mk_inst $loc (JmpImmediateCond (f,(int_to_pos $loc i))) }
     | JMP DOT f=flag  o=OFFS { mk_inst $loc (JmpOffsetCond (f,(int_to_pos $loc o))) }
     | JMP DOT f=flag  l=LBL { mk_inst $loc (JmpLabelCond (f,label_to_pos $loc l)) }
-    | JMP DOT f=flag  i=IMM { mk_inst $loc (JmpImmediateCond (f,(int_to_pos $loc i))) }
+    // | JMP DOT f=flag  i=IMM { mk_inst $loc (JmpImmediateCond (f,(int_to_pos $loc i))) } // repeating
     | JMP DOT f=flag  i=R   { mk_inst $loc (JmpAddrCond (f,int_to_reg i)) }
     | HALT                  { mk_inst $loc Halt }
     | CALL i=R              { mk_inst $loc (CallAddr (int_to_reg i)) }
@@ -105,6 +105,6 @@ un_cycle:
     | TEXT l1=separated_list(END_INST,inst) DATA l2=separated_list(END_INST,data) {l1,l2}
 
 file:
-    | l=un_cycle* {
+    | l=un_cycle* EOF {
         format_file l
     }
