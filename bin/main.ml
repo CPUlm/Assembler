@@ -38,9 +38,9 @@ let () =
       let s = Lexing.lexeme_start_p lexbuf in
       let e = Lexing.lexeme_end_p lexbuf in
       let p = PositionUtils.lexloc_to_pos (s, e) in
-      ErrorUtils.type_error msg (Some p)
+      ErrorUtils.type_error msg p
   | Parser.Error ->
       let s = Lexing.lexeme_start_p lexbuf in
       let e = Lexing.lexeme_end_p lexbuf in
       let p = PositionUtils.lexloc_to_pos (s, e) in
-      ErrorUtils.type_error "Syntax error." (Some p)
+      ErrorUtils.type_error "Syntax error." p

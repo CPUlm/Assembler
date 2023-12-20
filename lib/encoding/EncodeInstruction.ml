@@ -3,6 +3,27 @@ open TAst
 open EncodeCommon
 open ErrorUtils
 
+let check_offset imm =
+  if is_signed imm.v then imm.v
+  else
+    let txt =
+      Format.sprintf
+        "The value '%d' does not represent a valid 32-bit program address \
+         offset."
+        imm.v
+    in
+    type_error txt imm.pos
+
+(* let check_address imm =
+   if is_unsigned imm.v then
+   else
+     let txt =
+       Format.sprintf
+         "The value '%d' does not represent a valid 32-bit program address."
+         imm.v
+     in
+     type_error txt (Some imm.pos)
+*)
 let return r = (r, None, None)
 
 let check_writable_reg r p =
@@ -17,15 +38,15 @@ let check_writable_reg r p =
           | FP -> "fp"
           | _ -> failwith "Impossible case.")
       in
-      warning txt (Some p.pos)
+      warning txt p.pos
   | _ -> ()
 
 let check_prog_label labels label =
   match SMap.find_opt label.v labels with
-  | Some i -> i
+  | Some (i, _) -> i
   | None ->
       let txt = Format.sprintf "The label '%s' is not defined." label.v in
-      type_error txt (Some label.pos)
+      type_error txt label.pos
 
 let process_load_label data_sections prog_labels l =
   match SMap.find_opt l.v data_sections.mapping with
@@ -113,14 +134,16 @@ let process_instr data_sections prog_labels instr =
   | LoadImmediateLabel (r1, label) -> (
       check_writable_reg r1 instr;
       match process_load_label data_sections prog_labels label with
-      | Left lid -> ([ TLoadDataLabelAdd (r1, lid, R0) ], None, Some label.v)
+      | Left (lid, _) ->
+          ([ TLoadDataLabelAdd (r1, lid, R0) ], None, Some label.v)
       | Right lid ->
           ([ TLoadProgLabelAdd (r1, lid, R0) ], Some (true, label.v, lid), None)
       )
   | LoadImmediateAddLabel (r1, label, r2) -> (
       check_writable_reg r1 instr;
       match process_load_label data_sections prog_labels label with
-      | Left lid -> ([ TLoadDataLabelAdd (r1, lid, r2) ], None, Some label.v)
+      | Left (lid, _) ->
+          ([ TLoadDataLabelAdd (r1, lid, r2) ], None, Some label.v)
       | Right lid ->
           ([ TLoadProgLabelAdd (r1, lid, r2) ], Some (true, label.v, lid), None)
       )
@@ -140,16 +163,16 @@ let process_instr data_sections prog_labels instr =
   | JmpAddr r1 -> return [ TJmpAddr r1 ]
   | JmpAddrCond (f, r1) -> return [ TJmpAddrCond (f, r1) ]
   | JmpOffset imm ->
-      let imm = check_signed_immediate imm in
+      let imm = check_offset imm in
       return [ TJmpOffset imm ]
   | JmpOffsetCond (f, imm) ->
-      let imm = check_signed_immediate imm in
+      let imm = check_offset imm in
       return [ TJmpOffsetCond (f, imm) ]
   | JmpImmediate imm ->
-      let imm = check_unsigned_immediate imm in
+      let imm = ProgramAddress.of_imm imm in
       return [ TJmpImmediate imm ]
   | JmpImmediateCond (f, imm) ->
-      let imm = check_unsigned_immediate imm in
+      let imm = ProgramAddress.of_imm imm in
       return [ TJmpImmediateCond (f, imm) ]
   | Halt ->
       (* We set [halt_reg] to 0xffffffff *)
@@ -180,7 +203,10 @@ let process_instr data_sections prog_labels instr =
 let pre_encode_instr data_sections f =
   let prog_sections, prog_labels =
     split_by_label
-      (SMap.empty, (fun l -> ProgrammLabel.fresh (Some l)), SMap.add, SMap.mem)
+      ( SMap.empty,
+        (fun l -> ProgramLabel.fresh (Some l.v)),
+        (fun l id -> SMap.add l.v (id, l.pos)),
+        SMap.mem )
       f.text
   in
   let (prog_lbl_memory, used_prog_lbl, used_mem_lbl), prog_sections =
@@ -195,7 +221,7 @@ let pre_encode_instr data_sections f =
                 match pl with
                 | None -> (pls_mem, pls)
                 | Some (true, pl, lid) ->
-                    (ProgrammLabel.Set.add lid pls_mem, SSet.add pl pls)
+                    (ProgramLabel.Set.add lid pls_mem, SSet.add pl pls)
                 | Some (false, pl, _) -> (pls_mem, SSet.add pl pls)
               in
               let dls =
@@ -205,27 +231,26 @@ let pre_encode_instr data_sections f =
             (pls_mem, pls, dls, []) insts
         in
         ((pls_mem, pls, dls), (lid, tinsts)))
-      (ProgrammLabel.Set.empty, SSet.empty, SSet.empty)
+      (ProgramLabel.Set.empty, SSet.empty, SSet.empty)
       prog_sections
   in
   let unused_prog_label =
     SMap.filter (fun i _ -> SSet.mem i used_prog_lbl |> not) prog_labels
   in
-  (if not (SMap.is_empty unused_prog_label) then
-     let txt =
-       Format.asprintf "Program labels %a are not used." pp_smap
-         unused_prog_label
-     in
-     warning txt None
-   else
-     let unused_mem_label =
-       SMap.filter
-         (fun i _ -> SSet.mem i used_mem_lbl |> not)
-         data_sections.mapping
-     in
-     if not (SMap.is_empty unused_mem_label) then
-       let txt =
-         Format.asprintf "Data labels %a are not used." pp_smap unused_mem_label
-       in
-       warning txt None);
+  let unused_mem_label =
+    SMap.filter
+      (fun i _ -> SSet.mem i used_mem_lbl |> not)
+      data_sections.mapping
+  in
+
+  SMap.iter
+    (fun label (_, pos) ->
+      let txt = Format.asprintf "The program label %s is not used." label in
+      warning txt pos)
+    unused_prog_label;
+  SMap.iter
+    (fun label (_, pos) ->
+      let txt = Format.asprintf "The data label %s is not used." label in
+      warning txt pos)
+    unused_mem_label;
   (prog_sections, prog_lbl_memory)

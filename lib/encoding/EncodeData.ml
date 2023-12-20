@@ -112,17 +112,18 @@ let encode_section sec =
 let encode_data (f : file) =
   let data_decls, _ =
     split_by_label
-      (SSet.empty, Fun.id, (fun i _ -> SSet.add i), SSet.mem)
+      (SSet.empty, (fun l -> (l.v, l.pos)), (fun i _ -> SSet.add i.v), SSet.mem)
       f.data
   in
-  let size, data, mapping =
+  let next_free, data, mapping =
     List.fold_left
-      (fun (cur_pos, data, mapping) (sec_name, sec) ->
+      (fun (cur_pos, data, mapping) ((sec_name, pos), sec) ->
         let sec_size, sec_bytes = encode_section sec in
-        let mapping = SMap.add sec_name cur_pos mapping in
-        let cur_pos = cur_pos + sec_size in
+        let mapping = SMap.add sec_name (cur_pos, pos) mapping in
+        let cur_pos = MemoryAddress.add cur_pos sec_size in
         (cur_pos, data @ [ sec_bytes ], mapping))
-      (0, [], SMap.empty) data_decls
+      (MemoryAddress.zero, [], SMap.empty)
+      data_decls
   in
   let data = Bytes.concat Bytes.empty data in
-  { data; size; mapping }
+  { data; next_free; mapping }

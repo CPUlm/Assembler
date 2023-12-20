@@ -34,26 +34,6 @@ let int_to_reg i =
   | 27 -> R27
   | _ -> raise (Except ("Unknown register r" ^ string_of_int i))
 
-let rec casse_couple l =
-  match l with
-  | [] -> ([], [])
-  | (a, b) :: t ->
-      let l1, l2 = casse_couple t in
-      let a =
-        List.fold_left
-          (fun acc (a1, a2) ->
-            match (a1, a2) with
-            | None, None -> acc
-            | a1, Some i -> acc @ [ (a1, i) ]
-            | Some _, None -> failwith "A label without instruction ?!")
-          [] a
-      in
-      (a @ l1, b @ l2)
-
-let format_file l =
-  let l1, l2 = casse_couple l in
-  { text = l1; data = l2 }
-
 let str_to_col =
   let colors = Hashtbl.create 11 in
   List.iter

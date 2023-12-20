@@ -1,5 +1,3 @@
-open TAst
-
 let pp_error_head ppf (pos : Ast.position) =
   let begin_col, end_col = (pos.beg_col + 1, pos.end_col + 1) in
   if pos.beg_line = pos.end_line then
@@ -13,16 +11,15 @@ let pp_error_head ppf (pos : Ast.position) =
 let pp_severity color ppf severity =
   Format.fprintf ppf "\x1b[1;%sm%s\x1b[0m" color severity
 
-let warning txt (pos : Ast.position option) =
-  (match pos with
-  | None -> ()
-  | Some pos -> Format.eprintf "%a@." pp_error_head pos);
-  Format.eprintf "%a: %s@." (pp_severity "33") "Warning" txt
+let warning txt (pos : Ast.position) =
+  Format.eprintf "%a@.%a: %s@." pp_error_head pos (pp_severity "33") "Warning"
+    txt
 
-let type_error txt (pos : Ast.position option) =
-  (match pos with
-  | None -> ()
-  | Some pos -> Format.eprintf "%a@." pp_error_head pos);
+let type_error txt (pos : Ast.position) =
+  Format.eprintf "%a@.%a: %s@." pp_error_head pos (pp_severity "31") "Error" txt;
+  exit 1
+
+let file_error txt =
   Format.eprintf "%a: %s@." (pp_severity "31") "Error" txt;
   exit 1
 
@@ -37,6 +34,3 @@ let pp_slist f ppf l =
   | [] -> Format.pp_print_string ppf ""
   | [ x ] -> Format.pp_print_string ppf (f x)
   | l -> pp_slist f ppf l
-
-let pp_sset ppf s = (pp_slist Fun.id) ppf (SSet.elements s)
-let pp_smap ppf s = (pp_slist fst) ppf (SMap.bindings s)

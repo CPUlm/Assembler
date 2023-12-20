@@ -1,8 +1,5 @@
 open Ast
-
-let _ =
-  if Sys.int_size < 33 then
-    failwith "The size of the integers available is not large enough."
+open EncodeCommon
 
 module type Id = sig
   type t
@@ -18,7 +15,7 @@ module type Id = sig
 end
 
 (** A module to manipulate named unique ids. *)
-module ProgrammLabel : Id = struct
+module ProgramLabel : Id = struct
   module CMP = struct
     type t = int * string option
 
@@ -42,34 +39,8 @@ module ProgrammLabel : Id = struct
   type set = Set.t
 end
 
-module Int16 : sig
-  type t
-  type res = Single of t | Multiple of { low : t; high : t }
-
-  val of_int32 : int32 -> res
-end = struct
-  type t = int32
-  type res = Single of t | Multiple of { low : t; high : t }
-
-  let two_16 = Int32.(shift_left one 16)
-  let is_16bit imm = 0l <= imm && imm < two_16
-
-  let of_int32 i =
-    if is_16bit i then Single i
-    else
-      let low, high =
-        (Int32.(logand i 0xffffl), Int32.(shift_right_logical i 16))
-      in
-      Multiple { low; high }
-end
-
-module ProgrammAddress = struct
-  type t = int32
-end
-
-module DataAddress = struct
-  type t = int
-end
+module ProgramAddress : Address = Address32Bit
+module MemoryAddress : Address = Address32Bit
 
 (** The mode of the load *)
 type load_mode = HighHalf | LowHalf
@@ -92,21 +63,21 @@ type tinstr =
   (* Memory operations *)
   | TLoad of reg * reg
   | TLoadImmediateAdd of reg * Int16.t * load_mode * reg
-  | TLoadProgLabelAdd of reg * ProgrammLabel.t * reg
-  | TLoadDataLabelAdd of reg * DataAddress.t * reg
+  | TLoadProgLabelAdd of reg * ProgramLabel.t * reg
+  | TLoadDataLabelAdd of reg * MemoryAddress.t * reg
   | TStore of reg * reg
   (* Flow instructions *)
-  | TJmpLabel of ProgrammLabel.t
-  | TJmpLabelCond of flag * ProgrammLabel.t
+  | TJmpLabel of ProgramLabel.t
+  | TJmpLabelCond of flag * ProgramLabel.t
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
-  | TJmpOffset of ProgrammAddress.t
-  | TJmpOffsetCond of flag * ProgrammAddress.t
-  | TJmpImmediate of ProgrammAddress.t
-  | TJmpImmediateCond of flag * ProgrammAddress.t
+  | TJmpOffset of int
+  | TJmpOffsetCond of flag * int
+  | TJmpImmediate of ProgramAddress.t
+  | TJmpImmediateCond of flag * ProgramAddress.t
   (* Function Call *)
   | TCallAddr of reg
-  | TCallLabel of ProgrammLabel.t
+  | TCallLabel of ProgramLabel.t
 
 type data = TString of (int * bytes) | TInt of int32
 
@@ -125,4 +96,8 @@ let default_text_color = Black
 (** [default_background_color] : Default Background Color *)
 let default_background_color = White
 
-type data_section = { data : bytes; size : int; mapping : int SMap.t }
+type data_section = {
+  data : bytes;
+  next_free : MemoryAddress.t;
+  mapping : (MemoryAddress.t * position) SMap.t;
+}
