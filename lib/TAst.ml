@@ -1,5 +1,64 @@
 open Ast
 
+module type Id = sig
+  type t
+
+  val fresh : string option -> t
+  val name : t -> string option
+
+  module Map : Map.S with type key = t
+  module Set : Set.S with type elt = t
+
+  type 'a map = 'a Map.t
+  type set = Set.t
+end
+
+(** A module to manipulate named unique ids. *)
+module ProgrammLabel : Id = struct
+  module CMP = struct
+    type t = int * string option
+
+    let compare (x : t) (y : t) = Stdlib.compare (fst x) (fst y)
+  end
+
+  type t = CMP.t
+
+  let fresh =
+    let cpt = ref 0 in
+    fun f ->
+      incr cpt;
+      (!cpt, f)
+
+  let name = snd
+
+  module Map = Map.Make (CMP)
+  module Set = Set.Make (CMP)
+
+  type 'a map = 'a Map.t
+  type set = Set.t
+end
+
+module Int16 : sig
+  type t
+  type res = Single of t | Multiple of { low : t; high : t }
+
+  val of_int32 : int32 -> res
+end = struct
+  type t = int32
+  type res = Single of t | Multiple of { low : t; high : t }
+
+  let two_16 = Int32.(shift_left one 16)
+  let is_16bit imm = 0l <= imm && imm < two_16
+
+  let of_int32 i =
+    if is_16bit i then Single i
+    else
+      let low, high =
+        (Int32.(logand i 0xffffl), Int32.(shift_right_logical i 16))
+      in
+      Multiple { low; high }
+end
+
 type tinstr =
   (* Logical Operations *)
   | TAnd of reg * reg * reg
@@ -17,13 +76,13 @@ type tinstr =
   | TShiftRightLogical of reg * reg * reg
   (* Memory operations *)
   | TLoad of reg * reg
-  | TLoadImmediateAdd of reg * int32 * bool * reg
-  | TLoadProgLabelAdd of reg * string * bool * reg
-  | TLoadDataLabelAdd of reg * int32 * bool * reg
+  | TLoadImmediateAdd of reg * Int16.t * load_mode * reg
+  | TLoadProgLabelAdd of reg * ProgrammLabel.t * load_mode * reg
+  | TLoadDataLabelAdd of reg * Int16.t * load_mode * reg
   | TStore of reg * reg
   (* Flow instructions *)
-  | TJmpLabel of string
-  | TJmpLabelCond of flag * string
+  | TJmpLabel of ProgrammLabel.t
+  | TJmpLabelCond of flag * ProgrammLabel.t
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
   | TJmpOffset of int32
@@ -32,7 +91,7 @@ type tinstr =
   | TJmpImmediateCond of flag * int32
   (* Function Call *)
   | TCallAddr of reg
-  | TCallLabel of string
+  | TCallLabel of ProgrammLabel.t
 
 type data = TString of (int32 * bytes) | TInt of int32
 

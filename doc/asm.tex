@@ -47,6 +47,8 @@
 \definecolor{bright_cyan}   {RGB}{97,  214, 214}
 \definecolor{bright_white}  {RGB}{242, 242, 242}
 
+\setlength{\marginparwidth}{2cm}
+
 \begin{document}
 
 \section*{Syntaxe d'un fichier}
@@ -305,26 +307,18 @@ Les décalages sont opérés modulo $32$ bits.
 
 \subsubsection*{Instructions pour manipuler la Mémoire}
 
-On note $x_l$ les bits de poids faibles (bits de $0$ à $15$) de $x$ et
-$x_h$ les bits de poids forts de $x$ (bits de $16$ à $31$). On pourra également
-faire référence à \texttt{loadi} par \texttt{loadi.l}.
-
 \noindent
 \begin{tabularx}{\textwidth}{cccc X}
       \toprule
-      Instruction      & Destination & \multicolumn{2}{c}{Arguments} & Description                                                                                      \\
+      Instruction    & Destination & \multicolumn{2}{c}{Arguments} & Description                                                                                                                             \\
       \midrule
-      \texttt{mov}     & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ dans $r_1$.                                                              \\
-      \texttt{store}   & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ à l'adresse mémoire de $r_1$.                                            \\
-      \texttt{load}    & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie la valeur de la mémoire à l'adresse $r_2$ dans $r_1$.                                      \\
-      \texttt{loadi}   & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i$ (codé sur $16$ bits) dans $r_1$.                                                       \\
-      \texttt{loadi}   & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie $l_l$ dans $r_1$.                                                                          \\
-      \texttt{loadi.h} & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i \ll 16$ dans $r_1$.                                                                     \\
-      \texttt{loadi.h} & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie $l_h$ dans $r_1$.                                                                          \\
-      \texttt{loadi}   & $r_1$       & $i$                           & $r_2$                                                       & Copie $i + r_2$ dans $r_1$.        \\
-      \texttt{loadi}   & $r_1$       & $\$l$                         & $r_2$                                                       & Copie $l_l + r_2$ dans $r_1$.      \\
-      \texttt{loadi.h} & $r_1$       & $i$                           & $r_2$                                                       & Copie $i \ll 16 + r_2$ dans $r_1$. \\
-      \texttt{loadi.h} & $r_1$       & $\$l$                         & $r_2$                                                       & Copie $l_h + r_2$ dans $r_1$.      \\
+      \texttt{mov}   & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ dans $r_1$.                                                                                                     \\
+      \texttt{store} & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie le registre $r_2$ à l'adresse mémoire de $r_1$.                                                                                   \\
+      \texttt{load}  & $r_1$       & \multicolumn{2}{l}{$r_2$}     & Copie la valeur de la mémoire à l'adresse $r_2$ dans $r_1$.                                                                             \\
+      \texttt{loadi} & $r_1$       & \multicolumn{2}{l}{$i$}       & Copie $i$ (entier signé ou non sur $32$ bits) dans $r_1$.                                                                               \\
+      \texttt{loadi} & $r_1$       & \multicolumn{2}{l}{$\$l$}     & Copie l'adresse associée à $l$ dans $r_1$.                                                                                              \\
+      \texttt{loadi} & $r_1$       & $i$                           & $r_2$                                                       & Copie $i + r_2$ dans $r_1$ avec $i$ un entier signé ou non sur $32$ bits. \\
+      \texttt{loadi} & $r_1$       & $\$l$                         & $r_2$                                                       & Copie l'adresse associée à $l$ plus $r_2$ dans $r_1$.                     \\
       \bottomrule
 \end{tabularx}
 

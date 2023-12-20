@@ -89,6 +89,9 @@ and text =
 type immediate = int32 pos
 (** An immediate with position *)
 
+(** The mode of the load *)
+type load_mode = HighHalf | LowHalf
+
 type inst = inst_kind pos
 (** All possible instructions *)
 
@@ -117,10 +120,10 @@ and inst_kind =
   | Pop of reg (* Pseudo instr *)
   (* Memory operations *)
   | Load of reg * reg
-  | LoadImmediate of reg * immediate * bool
-  | LoadImmediateLabel of reg * label * bool
-  | LoadImmediateAdd of reg * immediate * bool * reg
-  | LoadImmediateAddLabel of reg * label * bool * reg
+  | LoadImmediate of reg * immediate * load_mode
+  | LoadImmediateLabel of reg * label * load_mode
+  | LoadImmediateAdd of reg * immediate * load_mode * reg
+  | LoadImmediateAddLabel of reg * label * load_mode * reg
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)
   (* Flow instructions *)

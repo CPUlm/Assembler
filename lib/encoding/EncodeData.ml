@@ -110,7 +110,11 @@ let encode_section sec =
   (size, Bytes.concat Bytes.empty bytes_list)
 
 let encode_data (f : file) =
-  let data_decls, _ = split_by_label f.data in
+  let data_decls, _ =
+    split_by_label
+      (SSet.empty, Fun.id, (fun i _ -> SSet.add i), SSet.mem)
+      f.data
+  in
   let size, data, mapping =
     List.fold_left
       (fun (cur_pos, data, mapping) (sec_name, sec) ->

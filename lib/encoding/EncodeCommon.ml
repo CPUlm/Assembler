@@ -1,23 +1,14 @@
 open Ast
-open TAst
 open ErrorUtils
 
-let two_32 = Int32.shift_left Int32.one 32
-let two_31 = Int32.shift_left Int32.one 31
-let neg_two_31 = Int32.sub Int32.zero two_31
-let signed i = neg_two_31 <= i && i < two_31
-let unsigned i = 0l <= i && i < two_32
-
-let check_immediate imm =
-  if signed imm.v || unsigned imm.v then imm.v
-  else
-    let txt =
-      Format.sprintf "The value '%ld' cannot be represented on 16 bit." imm.v
-    in
-    type_error txt (Some imm.pos)
+let two_32 = Int32.(shift_left one 32)
+let two_31 = Int32.(shift_left one 31)
+let neg_two_31 = Int32.(sub zero two_31)
+let _signed i = neg_two_31 <= i && i < two_31
+let _unsigned i = 0l <= i && i < two_32
 
 let check_signed_immediate imm =
-  if signed imm.v then imm.v
+  if _signed imm.v then imm.v
   else
     let txt =
       Format.sprintf
@@ -27,7 +18,7 @@ let check_signed_immediate imm =
     type_error txt (Some imm.pos)
 
 let check_unsigned_immediate imm =
-  if unsigned imm.v then imm.v
+  if _unsigned imm.v then imm.v
   else
     let txt =
       Format.sprintf
@@ -36,13 +27,24 @@ let check_unsigned_immediate imm =
     in
     type_error txt (Some imm.pos)
 
-let split_by_label l =
+let check_immediate imm =
+  if _unsigned imm.v then check_unsigned_immediate imm
+  else if _signed imm.v then check_signed_immediate imm
+  else
+    let txt =
+      Format.sprintf "The value '%ld' cannot be represented on 16 bit." imm.v
+    in
+    type_error txt (Some imm.pos)
+
+let split_by_label fns l =
+  let empty, create, add, mem = fns in
   let close_section final_list cur_label current_list label_set =
     if current_list <> [] then
       match cur_label with
       | None -> type_error "Non-empty section without name." None
       | Some s ->
-          (final_list @ [ (s, List.rev current_list) ], SSet.add s label_set)
+          let id = create s in
+          (final_list @ [ (id, List.rev current_list) ], add s id label_set)
     else (final_list, label_set)
   in
   let final_list, cur_label, current_list, label_set =
@@ -57,13 +59,13 @@ let split_by_label l =
             let final_list, label_set =
               close_section final_list cur_label current_list label_set
             in
-            if SSet.mem label.v label_set then
+            if mem label.v label_set then
               let txt =
                 Format.sprintf "The label '%s' has already been declared."
                   label.v
               in
               type_error txt (Some label.pos)
             else (final_list, Some label.v, [ instr ], label_set))
-      ([], None, [], SSet.empty) l
+      ([], None, [], empty) l
   in
   close_section final_list cur_label current_list label_set
