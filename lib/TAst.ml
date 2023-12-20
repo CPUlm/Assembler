@@ -59,6 +59,17 @@ end = struct
       Multiple { low; high }
 end
 
+module ProgrammAddress = struct
+  type t = int32
+end
+
+module DataAddress = struct
+  type t = int32
+end
+
+(** The mode of the load *)
+type load_mode = HighHalf | LowHalf
+
 type tinstr =
   (* Logical Operations *)
   | TAnd of reg * reg * reg
@@ -77,18 +88,18 @@ type tinstr =
   (* Memory operations *)
   | TLoad of reg * reg
   | TLoadImmediateAdd of reg * Int16.t * load_mode * reg
-  | TLoadProgLabelAdd of reg * ProgrammLabel.t * load_mode * reg
-  | TLoadDataLabelAdd of reg * Int16.t * load_mode * reg
+  | TLoadProgLabelAdd of reg * ProgrammLabel.t * reg
+  | TLoadDataLabelAdd of reg * DataAddress.t * reg
   | TStore of reg * reg
   (* Flow instructions *)
   | TJmpLabel of ProgrammLabel.t
   | TJmpLabelCond of flag * ProgrammLabel.t
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
-  | TJmpOffset of int32
-  | TJmpOffsetCond of flag * int32
-  | TJmpImmediate of int32
-  | TJmpImmediateCond of flag * int32
+  | TJmpOffset of ProgrammAddress.t
+  | TJmpOffsetCond of flag * ProgrammAddress.t
+  | TJmpImmediate of ProgrammAddress.t
+  | TJmpImmediateCond of flag * ProgrammAddress.t
   (* Function Call *)
   | TCallAddr of reg
   | TCallLabel of ProgrammLabel.t

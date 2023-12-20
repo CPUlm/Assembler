@@ -32,18 +32,14 @@ let process_load_label data_sections prog_labels l =
   | Some i -> Either.left i
   | None -> check_prog_label prog_labels l |> Either.right
 
-let compile_load_imm r1 imm mode r2 =
+let compile_load_imm r1 imm r2 =
   match Int16.of_int32 imm with
-  | Int16.Single imm -> [ TLoadImmediateAdd (r1, imm, mode, r2) ]
-  | Int16.Multiple i -> (
-      match mode with
-      | LowHalf ->
-          [
-            TLoadImmediateAdd (r1, i.low, LowHalf, r2);
-            TLoadImmediateAdd (r1, i.high, HighHalf, r1);
-          ]
-      | HighHalf ->
-          failwith "Load of a Shifted of a 32bit Immediate: Not Implemented.")
+  | Int16.Single imm -> [ TLoadImmediateAdd (r1, imm, LowHalf, r2) ]
+  | Int16.Multiple i ->
+      [
+        TLoadImmediateAdd (r1, i.low, LowHalf, r2);
+        TLoadImmediateAdd (r1, i.high, HighHalf, r1);
+      ]
 
 (** [process_instr data_sections prog_labels instr] : Check that the instruction
     is wellformed and return a siplified version of it, with the program label
@@ -106,32 +102,28 @@ let process_instr data_sections prog_labels instr =
   | Load (r1, r2) ->
       check_writable_reg r1 instr;
       return [ TLoad (r1, r2) ]
-  | LoadImmediate (r1, imm, lhw) ->
+  | LoadImmediate (r1, imm) ->
       check_writable_reg r1 instr;
       let imm = check_immediate imm in
-      (compile_load_imm r1 imm lhw R0, None, None)
-  | LoadImmediateLabel (r1, label, lhw) -> (
-      check_writable_reg r1 instr;
-      match process_load_label data_sections prog_labels label with
-      | Left lid ->
-          ([ TLoadDataLabelAdd (r1, lid, lhw, R0) ], None, Some label.v)
-      | Right lid ->
-          ( [ TLoadProgLabelAdd (r1, lid, lhw, R0) ],
-            Some (true, label.v, lid),
-            None ))
-  | LoadImmediateAdd (r1, imm, lhw, r2) ->
+      (compile_load_imm r1 imm R0, None, None)
+  | LoadImmediateAdd (r1, imm, r2) ->
       check_writable_reg r1 instr;
       let imm = check_immediate imm in
-      (compile_load_imm r1 imm lhw r2, None, None)
-  | LoadImmediateAddLabel (r1, label, lhw, r2) -> (
+      (compile_load_imm r1 imm r2, None, None)
+  | LoadImmediateLabel (r1, label) -> (
       check_writable_reg r1 instr;
       match process_load_label data_sections prog_labels label with
-      | Left lid ->
-          ([ TLoadDataLabelAdd (r1, lid, lhw, r2) ], None, Some label.v)
+      | Left lid -> ([ TLoadDataLabelAdd (r1, lid, R0) ], None, Some label.v)
       | Right lid ->
-          ( [ TLoadProgLabelAdd (r1, lid, lhw, r2) ],
-            Some (true, label.v, lid),
-            None ))
+          ([ TLoadProgLabelAdd (r1, lid, R0) ], Some (true, label.v, lid), None)
+      )
+  | LoadImmediateAddLabel (r1, label, r2) -> (
+      check_writable_reg r1 instr;
+      match process_load_label data_sections prog_labels label with
+      | Left lid -> ([ TLoadDataLabelAdd (r1, lid, r2) ], None, Some label.v)
+      | Right lid ->
+          ([ TLoadProgLabelAdd (r1, lid, r2) ], Some (true, label.v, lid), None)
+      )
   | Store (r1, r2) ->
       check_writable_reg r1 instr;
       return [ TStore (r1, r2) ]
@@ -161,7 +153,7 @@ let process_instr data_sections prog_labels instr =
       return [ TJmpImmediateCond (f, imm) ]
   | Halt ->
       (* We set [halt_reg] to 0xffffffff *)
-      let l = compile_load_imm halt_reg 0xffffffffl LowHalf R0 in
+      let l = compile_load_imm halt_reg 0xffffffffl R0 in
       (* And we jump *)
       return (l @ [ TJmpAddr halt_reg ])
   | CallAddr r -> return [ TCallAddr r ]
