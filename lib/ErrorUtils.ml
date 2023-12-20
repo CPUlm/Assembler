@@ -7,7 +7,7 @@ let pp_error_head ppf (pos : Ast.position) =
       pos.file pos.beg_line begin_col end_col
   else
     Format.fprintf ppf
-      "\x1b[1mFile \"%s\", line %i-%i, characters %i-%i:\x1b[0m" pos.file
+      "\x1b[1mFile \"%s\", lines %i-%i, characters %i-%i:\x1b[0m" pos.file
       pos.beg_line pos.end_line begin_col end_col
 
 let pp_severity color ppf severity =
