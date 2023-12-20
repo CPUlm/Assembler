@@ -1,0 +1,6 @@
+.text
+main:
+    nop
+
+f: ; f is unused
+    nop
