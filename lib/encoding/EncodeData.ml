@@ -1,5 +1,6 @@
 open Ast
 open TAst
+open ErrorUtils
 open EncodeCommon
 
 module StyleSet = Set.Make (struct
@@ -112,7 +113,16 @@ let encode_section sec =
 let encode_data (f : file) =
   let data_decls, _ =
     split_by_label
-      (SSet.empty, (fun l -> (l.v, l.pos)), (fun i _ -> SSet.add i.v), SSet.mem)
+      ( SSet.empty,
+        (fun l ->
+          if l.v = "main" then
+            let txt =
+              Format.asprintf "The label 'main' cannot be used as a data label."
+            in
+            error txt l.pos
+          else (l.v, l.pos)),
+        (fun i _ -> SSet.add i.v),
+        SSet.mem )
       f.data
   in
   let next_free, data, mapping =

@@ -276,7 +276,8 @@ let pre_encode_instr (data_sections : data_section) f =
         ((pls, dls), (lid, tinsts)))
       (SSet.empty, SSet.empty) prog_sections
   in
-  if not (SMap.mem "main" prog_labels) then file_error "Missing 'main' label."
+  if not (SMap.mem "main" prog_labels) then
+    file_error "Missing program label 'main'."
   else
     (* Mark main label as used to avoid useless warnings about it. It it always
        used implictly as the entry point of the program. *)
