@@ -3,8 +3,8 @@ main:
     nop
 
 .data
-a: .ascii #bold(#textcolor(red, "Hello") + " " + #italic(#textcolor("green", "World")))
-b: .ascii #underline("foo" + #blinking(" bar"))
-c: .ascii "test" + #hide("vicious")
-d: .ascii #crossed("1 + 1 = 2")
-f: .ascii #faint("The dog") + #overlined(" " + #default("and") + "the frog")
+a: .string #bold(#textcolor(red, "Hello") + " " + #italic(#textcolor("green", "World")))
+b: .string #underline("foo" + #blinking(" bar"))
+c: .string "test" + #hide("vicious")
+d: .string #crossed("1 + 1 = 2")
+f: .string #faint("The dog") + #overlined(" " + #default("and") + "the frog")

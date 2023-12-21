@@ -2,4 +2,4 @@
     nop
 
 .data
-a: .ascii "bad \5 sequence"
+a: .string "bad \5 sequence"

@@ -1,4 +1,4 @@
 .data
-a: .ascii "hello"
+a: .string "hello"
 
 ; no text section

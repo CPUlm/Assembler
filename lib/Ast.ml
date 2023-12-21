@@ -142,7 +142,7 @@ and inst_kind =
 type data = data_kind pos
 (** All possible data *)
 
-and data_kind = Ascii of text | Str of text | Int of immediate
+and data_kind = Str of text | Int of immediate
 
 type file = {
   text : (label option * inst) list;

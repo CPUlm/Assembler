@@ -3,6 +3,6 @@ main:
     nop
 
 .data
-a: .ascii "Hello World"
-b: .ascii "the \"assembler\" is \\"
-c: .ascii "the \0 nul character"
+a: .string "Hello World"
+b: .string "the \"assembler\" is \\"
+c: .string "the \0 nul character"

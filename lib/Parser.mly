@@ -21,7 +21,7 @@
 %token <Ast.flag> JMPC
 
 (* Directives *)
-%token DATA TEXT ASCII STRING UINT INT
+%token DATA TEXT STRING ZSTRING UINT INT
 
 (* Registers *)
 %token <int> R
@@ -139,8 +139,8 @@ styled_string:
   }
 
 data_without_label:
-  | ASCII s=styled_string  { mk_pos $loc (Ascii s) }
-  | STRING s=styled_string { mk_pos $loc (Str s) }
+  | STRING s=styled_string  { mk_pos $loc (Str s) }
+  | ZSTRING s=styled_string { mk_pos $loc (Str (Concat (s, Text "\000"))) }
   | INT u=IMM | UINT u=IMM { mk_pos $loc (Int (int_to_pos $loc u)) }
 
 data:

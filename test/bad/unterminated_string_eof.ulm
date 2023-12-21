@@ -2,4 +2,4 @@
     nop
 
 .data
-    .ascii "
+    .string "

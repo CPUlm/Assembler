@@ -92,8 +92,7 @@ let of_text t =
     one. *)
 let process_data data =
   match data.v with
-  | Ascii text -> TString (of_text text)
-  | Str text -> TString (of_text (Concat (text, Text "\000")))
+  | Str text -> TString (of_text text)
   | Int i -> TInt (check_immediate i)
 
 let encode_section sec =

@@ -1,3 +1,3 @@
 .data
 main: ; main label should not be used in data section
-    .ascii "foo"
+    .string "foo"

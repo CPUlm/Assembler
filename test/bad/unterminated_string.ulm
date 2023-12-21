@@ -2,5 +2,5 @@
     nop
 
 .data
-    .ascii "
-    .ascii "foo"
+    .string "
+    .string "foo"

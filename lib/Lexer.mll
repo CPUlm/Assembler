@@ -61,8 +61,8 @@ let resolve_directive =
         [
           (".text", TEXT);
           (".data", DATA);
-          (".ascii", ASCII);
           (".string", STRING);
+          (".zstring", ZSTRING);
           (".uint", UINT);
           (".int", INT);
           (* TODO: add support for .include *)
