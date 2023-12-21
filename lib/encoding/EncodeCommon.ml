@@ -72,8 +72,9 @@ module type Address = sig
   val fit_16bit : t -> int * position -> bool
   val to_int16 : t -> Int16.res
 
-  (* module Set : Set.S with type elt = t
-     type set = Set.t *)
+  module Set : Set.S with type elt = t
+
+  type set = Set.t
 
   module Map : Map.S with type key = t
 
@@ -139,9 +140,10 @@ module Address32Bit : Address = struct
 
   let to_int16 t = Int16.of_int32 (Int32.of_int t)
 
-  (* module Set = Set.Make (Int)
+  module Set = Set.Make (Int)
 
-     type set = Set.t *)
+  type set = Set.t
+
   module Map = Map.Make (Int)
 
   type 'a map = 'a Map.t

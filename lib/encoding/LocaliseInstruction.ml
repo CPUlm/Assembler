@@ -1,4 +1,5 @@
 open TAst
+open PAst
 open EncodeCommon
 
 let add_instr_p pos (addr, l) v =
@@ -119,26 +120,26 @@ let localise_section begin_addr instrs pos =
       | TStore (r1, r2) -> incr_and_ret accc (PStore (r1, r2))
       | TJmpAddr r1 -> incr_and_ret accc (PJmpAddr r1)
       | TJmpAddrCond (f, r1) -> incr_and_ret accc (PJmpAddrCond (f, r1))
-      | TJmpOffset (offset, ipos) ->
+      | TJmpOffset offset ->
           let target_addr =
-            ProgramAddress.with_offset curr_addr (offset, ipos)
+            ProgramAddress.with_offset curr_addr (offset, assert false)
           in
-          compile_jump accc pos target_addr (Some ipos)
-      | TJmpOffsetCond (f, offset, ipos) ->
+          compile_jump accc pos target_addr (assert false)
+      | TJmpOffsetCond (f, offset) ->
           let target_addr =
-            ProgramAddress.with_offset curr_addr (offset, ipos)
+            ProgramAddress.with_offset curr_addr (offset, assert false)
           in
-          compile_jump_cond accc pos f target_addr (Some ipos)
-      | TJmpImmediate (target_addr, ipos) ->
-          compile_jump accc pos target_addr (Some ipos)
-      | TJmpImmediateCond (f, target_addr, ipos) ->
-          compile_jump_cond accc pos f target_addr (Some ipos)
-      | TCallAddr (r, ipos) ->
-          let na, l = setup_stack curr_addr pos 1 ipos in
+          compile_jump_cond accc pos f target_addr (assert false)
+      | TJmpImmediate target_addr ->
+          compile_jump accc pos target_addr (assert false)
+      | TJmpImmediateCond (f, target_addr) ->
+          compile_jump_cond accc pos f target_addr (assert false)
+      | TCallAddr r ->
+          let na, l = setup_stack curr_addr pos 1 (assert false) in
           let na, l = add_instr (na, l) (PJmpAddr r) in
           (na, l, a2c)
-      | TCallLabel (lbl, ipos) ->
-          let na, l = setup_stack curr_addr pos 3 ipos in
+      | TCallLabel lbl ->
+          let na, l = setup_stack curr_addr pos 3 (assert false) in
           (* We load the value of the label in memory : 2 operations *)
           let na, l =
             add_instr (na, l) (PLoadProgLabelAdd (PrivateReg, lbl, R0))
