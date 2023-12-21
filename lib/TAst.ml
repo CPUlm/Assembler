@@ -45,7 +45,10 @@ module MemoryAddress : Address = Address32Bit
 (** The mode of the load *)
 type load_mode = HighHalf | LowHalf
 
-type tinstr =
+type tinstr = tinstr_kind pos
+(** Type of a typed instruction, with its position in the source file. *)
+
+and tinstr_kind =
   (* Logical Operations *)
   | TAnd of reg * reg * reg
   | TOr of reg * reg * reg
@@ -64,46 +67,17 @@ type tinstr =
   | TLoad of reg * reg
   | TLoadImmediateAdd of reg * Int16.t * load_mode * reg
   | TLoadProgLabelAdd of reg * ProgramLabel.t * reg
-  | TLoadDataLabelAdd of reg * MemoryAddress.t * reg
   | TStore of reg * reg
   (* Flow instructions *)
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
-  | TJmpOffset of int * position
-  | TJmpOffsetCond of flag * int * position
-  | TJmpImmediate of ProgramAddress.t * position
-  | TJmpImmediateCond of flag * ProgramAddress.t * position
+  | TJmpOffset of int
+  | TJmpOffsetCond of flag * int
+  | TJmpImmediate of ProgramAddress.t
+  | TJmpImmediateCond of flag * ProgramAddress.t
   (* Function Call *)
-  | TCallAddr of reg * position
-  | TCallLabel of ProgramLabel.t * position
-
-type pos_instr =
-  (* Logical Operations *)
-  | PAnd of reg * reg * reg
-  | POr of reg * reg * reg
-  | PNor of reg * reg * reg
-  | PXor of reg * reg * reg
-  (* Arithmetic operation *)
-  | PAdd of reg * reg * reg
-  | PSub of reg * reg * reg
-  | PMul of reg * reg * reg
-  | PDiv of reg * reg * reg
-  (* Shifts operations *)
-  | PShiftLeftLogical of reg * reg * reg
-  | PShiftRightArith of reg * reg * reg
-  | PShiftRightLogical of reg * reg * reg
-  (* Memory operations *)
-  | PLoad of reg * reg
-  | PLoadImmediateAdd of reg * Int16.t * load_mode * reg
-  | PLoadProgLabelAdd of reg * ProgramLabel.t * reg
-  | PStore of reg * reg
-  (* Flow instructions *)
-  | PJmpLabel of ProgramLabel.t
-  | PJmpLabelCond of flag * ProgramLabel.t
-  | PJmpAddr of reg
-  | PJmpAddrCond of flag * reg
-  | PJmpImmediate of ProgramAddress.t
-  | PJmpImmediateCond of flag * ProgramAddress.t
+  | TCallAddr of reg
+  | TCallLabel of ProgramLabel.t
 
 type data = TString of (int * bytes) | TInt of int32
 
@@ -122,8 +96,4 @@ type data_section = {
   mapping : (MemoryAddress.t * position) SMap.t;
 }
 
-type instr_section = {
-  instr_bytes : bytes;
-  next_free : MemoryAddress.t;
-  mapping : (MemoryAddress.t * position) SMap.t;
-}
+let get_instr i = i.v
