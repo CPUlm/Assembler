@@ -21,7 +21,7 @@
 %token <Ast.flag> JMPC
 
 (* Directives *)
-%token DATA TEXT STRING ZSTRING UINT INT
+%token DATA TEXT STRING ZSTRING UINT INT INCLUDE
 
 (* Registers *)
 %token <int> R

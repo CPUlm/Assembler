@@ -65,7 +65,7 @@ let resolve_directive =
           (".zstring", ZSTRING);
           (".uint", UINT);
           (".int", INT);
-          (* TODO: add support for .include *)
+          (".include",INCLUDE)
         ]
         );
   fun s -> try Hashtbl.find directives s with Not_found -> raise (Lexing_error ("Unknown directive " ^ s))
@@ -98,7 +98,7 @@ let upper = ['A'-'Z']
 let directive = '.' lower+
 let dec_integer = '0' | ['1'-'9'] digit*
 let bin_integer = "0b" ('0' | '1')+
-let hex_integer = "0x" (['0'-'9' 'a'-'f' 'A'-'F'])+
+let hex_integer = "0x" (['0'-'9' 'a'-'f' 'A'-'F' ])+
 let integer = dec_integer | bin_integer | hex_integer
 let register = ('R' | 'r') dec_integer
 let identifier = (upper | lower) (lower | upper | digit | '.')*
@@ -115,9 +115,8 @@ rule next_token = parse
   | '+' { PLUS }
   | ':' { COLON }
   | '(' { LPAR }
-  | ')' { RPAR }
+  | ')' { RPAR}
   | '"' { string_lex lexbuf }
-
   | integer as i
     { IMM (int_of_string i) }
 
@@ -199,4 +198,3 @@ and string_lex = parse
     | _ as c
       { Buffer.add_char string_buffer c; string_lex lexbuf }
 
-{ }
