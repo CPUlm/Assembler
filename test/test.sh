@@ -80,3 +80,7 @@ percent=`expr 100 \* $score / $max`;
 echo -n "Result: $score/$max : $percent%";
 
 echo
+
+if [[ "$score" != "$max" ]]; then
+  exit 1
+fi
