@@ -38,14 +38,11 @@ jobs:
         ocaml-compiler: ${{ matrix.ocaml-compiler }}
         dune-cache: true
 
-    - name: Setup opam env
-      run: eval $(opam env)
-
     - name: Install menhir
       run: opam install menhir
 
     - name: Build
-      run: make
+      run: eval $(opam env) && make
 
     - name: Run tests
-      run: make test
+      run: eval $(opam env) && make test
