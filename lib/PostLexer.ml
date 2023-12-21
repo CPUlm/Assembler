@@ -33,18 +33,3 @@ let rec gen_token =
     )
     | _ -> t
 )
-(*
-match sl with
-    | [STR fname] -> (
-      let f =  open_in fname in
-      let f_lb = Lexing.from_channel f in
-      let rec lex_tokens acc =
-        match next_token f_lb with
-        | [EOF] -> List.rev acc
-        | tokens -> lex_tokens (tokens @ acc)
-      in
-      let r = lex_tokens [] in 
-      let _ = close_in f in
-      r
-    )
-    *)
