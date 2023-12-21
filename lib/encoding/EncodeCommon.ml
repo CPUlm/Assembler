@@ -18,7 +18,7 @@ let check_signed_immediate imm =
       Format.sprintf
         "The value '%d' cannot be represented as a 16-bit signed integer." imm.v
     in
-    type_error txt imm.pos
+    error txt imm.pos
 
 let check_unsigned_immediate imm =
   if is_unsigned imm.v then Int32.of_int imm.v
@@ -28,7 +28,7 @@ let check_unsigned_immediate imm =
         "The value '%d' cannot be represented as a 16-bit unsigned integer."
         imm.v
     in
-    type_error txt imm.pos
+    error txt imm.pos
 
 let check_immediate imm =
   if is_unsigned imm.v || is_signed imm.v then Int32.of_int imm.v
@@ -36,7 +36,7 @@ let check_immediate imm =
     let txt =
       Format.sprintf "The value '%d' cannot be represented on 16 bit." imm.v
     in
-    type_error txt imm.pos
+    error txt imm.pos
 
 module Int16 : sig
   type t
@@ -63,51 +63,88 @@ end
 
 module type Address = sig
   type t
-  type res = { high : Int16.t; low : Int16.t }
 
   val zero : t
   val of_imm : immediate -> t
-  val add : t -> int -> t
-  val to_int16 : t -> res
-end
+  val add_section : t -> string * int * position -> t
+  val next : t -> string * int * position -> t
+  val with_offset : t -> int * position -> t
+  val fit_16bit : t -> int * position -> bool
+  val to_int16 : t -> Int16.res
 
-(* let check_offset imm =
-     if is_signed imm.v then imm.v
-     else
-       let txt =
-         Format.sprintf
-           "The value '%d' does not represent a valid 32-bit program address \
-            offset."
-           imm.v
-       in
-       type_error txt (Some imm.pos) *)
+  (* module Set : Set.S with type elt = t
+     type set = Set.t *)
+
+  module Map : Map.S with type key = t
+
+  type 'a map = 'a Map.t
+end
 
 module Address32Bit : Address = struct
   type t = int
-  type res = { high : Int16.t; low : Int16.t }
 
-  let of_int addr pos =
-    if is_unsigned addr then addr
+  let is_32bit i = is_unsigned i || is_signed i
+  let zero = 0
+
+  let of_imm imm =
+    if is_32bit imm.v then imm.v
     else
       let txt =
         Format.sprintf
-          "The value '%d' does not represent a valid 32-bit program address."
-          addr
+          "The value '%d' does not represent a valid 32-bit address." imm.v
       in
-      type_error txt pos
+      error txt imm.pos
 
-  let zero = 0
-  let of_imm imm = of_int imm.v imm.pos
+  let add_section t sec =
+    let sec_name, sec_size, sec_pos = sec in
+    let new_addr = t + sec_size in
+    if is_32bit new_addr then new_addr
+    else
+      let txt =
+        Format.sprintf
+          "The section '%s' of size %d, is too long to be in a 32bit address \
+           space. It should end at the address %x, but this does not fit in a \
+           32bit integer."
+          sec_name sec_size new_addr
+      in
+      error txt sec_pos
 
-  let add t i =
-    (* of_int (t + i) None *)
-    ignore (t, i);
-    assert false
+  let next t sec =
+    let new_addr = t + 1 in
+    if is_32bit new_addr then new_addr
+    else
+      let sec_name, sec_beg, sec_pos = sec in
+      let txt =
+        Format.sprintf
+          "The section '%s' begining at address %x is too long to be in a \
+           32bit address space."
+          sec_name sec_beg
+      in
+      error txt sec_pos
 
-  let to_int16 t =
-    match Int16.of_int32 (Int32.of_int t) with
-    | Single i -> { high = Int16.zero; low = i }
-    | Multiple i -> { high = i.high; low = i.low }
+  let with_offset t (offset, pos) =
+    let new_addr = t + offset in
+    if is_32bit new_addr then new_addr
+    else
+      let txt =
+        Format.sprintf "The address '%x' is not a 32bit integer." new_addr
+      in
+      error txt pos
+
+  let fit_16bit t ofs =
+    let i = with_offset t ofs in
+    match Int16.of_int32 (Int32.of_int i) with
+    | Single _ -> true
+    | Multiple _ -> false
+
+  let to_int16 t = Int16.of_int32 (Int32.of_int t)
+
+  (* module Set = Set.Make (Int)
+
+     type set = Set.t *)
+  module Map = Map.Make (Int)
+
+  type 'a map = 'a Map.t
 end
 
 let split_by_label fns l =
@@ -138,7 +175,7 @@ let split_by_label fns l =
                 Format.sprintf "The label '%s' has already been declared."
                   label.v
               in
-              type_error txt label.pos
+              error txt label.pos
             else (final_list, Some label, [ instr ], label_set))
       ([], None, [], empty) l
   in

@@ -1,0 +1,4 @@
+.text
+main:
+    ; r0 is a read-only register
+    loadi r0 1

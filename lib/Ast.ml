@@ -149,14 +149,3 @@ type file = {
   data : (label option * data) list;
 }
 (** An assembly file, with its data and its text sections. *)
-
-let f
-    (x :
-      ((label option * inst) list pos, (label option * data) list pos) Either.t
-      list) =
-  List.partition_map (fun i -> i) x
-
-(*
-   ((label option * inst) list pos,
-   (label option * data) list pos)
-   Either.t *)

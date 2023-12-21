@@ -120,10 +120,12 @@ let encode_data (f : file) =
       (fun (cur_pos, data, mapping) ((sec_name, pos), sec) ->
         let sec_size, sec_bytes = encode_section sec in
         let mapping = SMap.add sec_name (cur_pos, pos) mapping in
-        let cur_pos = MemoryAddress.add cur_pos sec_size in
+        let cur_pos =
+          MemoryAddress.add_section cur_pos (sec_name, sec_size, pos)
+        in
         (cur_pos, data @ [ sec_bytes ], mapping))
       (MemoryAddress.zero, [], SMap.empty)
       data_decls
   in
-  let data = Bytes.concat Bytes.empty data in
-  { data; next_free; mapping }
+  let data_bytes = Bytes.concat Bytes.empty data in
+  { data_bytes; next_free; mapping }

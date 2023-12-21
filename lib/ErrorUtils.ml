@@ -1,3 +1,10 @@
+(** True if warnings should be treated as errors. *)
+let fatal_warnings = ref false
+
+let pp_pos ppf (pos : Ast.position) =
+  Format.fprintf ppf "%s:%i-%i:%i-%i" pos.file pos.beg_line pos.end_line
+    pos.beg_col pos.end_col
+
 let pp_error_head ppf (pos : Ast.position) =
   let begin_col, end_col = (pos.beg_col + 1, pos.end_col + 1) in
   if pos.beg_line = pos.end_line then
@@ -11,17 +18,19 @@ let pp_error_head ppf (pos : Ast.position) =
 let pp_severity color ppf severity =
   Format.fprintf ppf "\x1b[1;%sm%s\x1b[0m" color severity
 
-let warning txt (pos : Ast.position) =
-  Format.eprintf "%a@.%a: %s@." pp_error_head pos (pp_severity "33") "Warning"
-    txt
-
-let type_error txt (pos : Ast.position) =
+let error txt (pos : Ast.position) =
   Format.eprintf "%a@.%a: %s@." pp_error_head pos (pp_severity "31") "Error" txt;
   exit 1
 
 let file_error txt =
   Format.eprintf "%a: %s@." (pp_severity "31") "Error" txt;
   exit 1
+
+let warning txt (pos : Ast.position) =
+  if !fatal_warnings then error (txt ^ " (promoted warning)") pos
+  else
+    Format.eprintf "%a@.%a: %s@." pp_error_head pos (pp_severity "33") "Warning"
+      txt
 
 let rec pp_slist f ppf l =
   match l with

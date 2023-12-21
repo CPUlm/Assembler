@@ -92,7 +92,7 @@ color:
     {
         match str_to_col i with
         | Some c -> c
-        | None -> ErrorUtils.type_error ("Unknown color " ^ i) ((lexloc_to_pos $loc))
+        | None -> ErrorUtils.error ("Unknown color " ^ i) ((lexloc_to_pos $loc))
     }
 
 styled_string:

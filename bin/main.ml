@@ -4,7 +4,13 @@ let usage = "usage: asm [options] file.ulm"
 let parse_only = ref false
 
 let spec =
-  Arg.align [ ("--parse-only", Arg.Set parse_only, "  stop after parsing") ]
+  Arg.align
+    [
+      ("--parse-only", Arg.Set parse_only, "  stop after parsing");
+      ( "--fatal-warnings",
+        Arg.Set ErrorUtils.fatal_warnings,
+        "  treats warnings as errors" );
+    ]
 
 let filename =
   let file = ref None in
@@ -38,9 +44,9 @@ let () =
       let s = Lexing.lexeme_start_p lexbuf in
       let e = Lexing.lexeme_end_p lexbuf in
       let p = PositionUtils.lexloc_to_pos (s, e) in
-      ErrorUtils.type_error msg p
+      ErrorUtils.error msg p
   | Parser.Error ->
       let s = Lexing.lexeme_start_p lexbuf in
       let e = Lexing.lexeme_end_p lexbuf in
       let p = PositionUtils.lexloc_to_pos (s, e) in
-      ErrorUtils.type_error "Syntax error." p
+      ErrorUtils.error "Syntax error." p

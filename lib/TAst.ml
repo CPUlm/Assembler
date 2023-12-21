@@ -67,28 +67,48 @@ type tinstr =
   | TLoadDataLabelAdd of reg * MemoryAddress.t * reg
   | TStore of reg * reg
   (* Flow instructions *)
-  | TJmpLabel of ProgramLabel.t
-  | TJmpLabelCond of flag * ProgramLabel.t
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
-  | TJmpOffset of int
-  | TJmpOffsetCond of flag * int
-  | TJmpImmediate of ProgramAddress.t
-  | TJmpImmediateCond of flag * ProgramAddress.t
+  | TJmpOffset of int * position
+  | TJmpOffsetCond of flag * int * position
+  | TJmpImmediate of ProgramAddress.t * position
+  | TJmpImmediateCond of flag * ProgramAddress.t * position
   (* Function Call *)
-  | TCallAddr of reg
-  | TCallLabel of ProgramLabel.t
+  | TCallAddr of reg * position
+  | TCallLabel of ProgramLabel.t * position
+
+type pos_instr =
+  (* Logical Operations *)
+  | PAnd of reg * reg * reg
+  | POr of reg * reg * reg
+  | PNor of reg * reg * reg
+  | PXor of reg * reg * reg
+  (* Arithmetic operation *)
+  | PAdd of reg * reg * reg
+  | PSub of reg * reg * reg
+  | PMul of reg * reg * reg
+  | PDiv of reg * reg * reg
+  (* Shifts operations *)
+  | PShiftLeftLogical of reg * reg * reg
+  | PShiftRightArith of reg * reg * reg
+  | PShiftRightLogical of reg * reg * reg
+  (* Memory operations *)
+  | PLoad of reg * reg
+  | PLoadImmediateAdd of reg * Int16.t * load_mode * reg
+  | PLoadProgLabelAdd of reg * ProgramLabel.t * reg
+  | PStore of reg * reg
+  (* Flow instructions *)
+  | PJmpLabel of ProgramLabel.t
+  | PJmpLabelCond of flag * ProgramLabel.t
+  | PJmpAddr of reg
+  | PJmpAddrCond of flag * reg
+  | PJmpImmediate of ProgramAddress.t
+  | PJmpImmediateCond of flag * ProgramAddress.t
 
 type data = TString of (int * bytes) | TInt of int32
 
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)
-
-(** [ret_reg] is the register erased when jumping back to the function. *)
-let ret_reg = PrivateReg
-
-(** [halt_reg] is the register erased when halting the program. *)
-let halt_reg = PrivateReg
 
 (** [default_text_color] : Default Text Color *)
 let default_text_color = Black
@@ -97,7 +117,13 @@ let default_text_color = Black
 let default_background_color = White
 
 type data_section = {
-  data : bytes;
+  data_bytes : bytes;
+  next_free : MemoryAddress.t;
+  mapping : (MemoryAddress.t * position) SMap.t;
+}
+
+type instr_section = {
+  instr_bytes : bytes;
   next_free : MemoryAddress.t;
   mapping : (MemoryAddress.t * position) SMap.t;
 }
