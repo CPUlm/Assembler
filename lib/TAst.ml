@@ -67,7 +67,6 @@ and tinstr_kind =
   | TLoad of reg * reg
   | TLoadImmediateAdd of reg * Int16.t * load_mode * reg
   | TLoadProgLabelAdd of reg * ProgramLabel.t * reg
-  | TLoadDataLabelAdd of reg * MemoryAddress.t * reg
   | TStore of reg * reg
   (* Flow instructions *)
   | TJmpAddr of reg
@@ -96,3 +95,5 @@ type data_section = {
   next_free : MemoryAddress.t;
   mapping : (MemoryAddress.t * position) SMap.t;
 }
+
+let get_instr i = i.v

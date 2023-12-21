@@ -3,17 +3,6 @@ open TAst
 open EncodeCommon
 open ErrorUtils
 
-let check_offset imm =
-  if is_signed imm.v then imm.v
-  else
-    let txt =
-      Format.sprintf
-        "The value '%d' does not represent a valid 32-bit program address \
-         offset."
-        imm.v
-    in
-    error txt imm.pos
-
 let mk_pos i r : tinstr = { v = r; pos = i.pos }
 let mk_pos_l i = List.map (mk_pos i)
 let return i r = (Monoid.of_elm (mk_pos i r), None, None)
@@ -21,8 +10,10 @@ let return_l i r = (Monoid.of_list (mk_pos_l i r), None, None)
 
 let check_readable_register r p =
   match r with
-  | PrivateReg -> warning "The register 'rpriv' should not be used here." p.pos
-  | _ -> ()
+  | PrivateReg ->
+      warning "The register 'rpriv' should not be used here." p.pos;
+      r
+  | _ -> r
 
 let check_writable_reg r p =
   match r with
@@ -37,8 +28,9 @@ let check_writable_reg r p =
           | PrivateReg -> "rpriv"
           | _ -> failwith "Impossible case.")
       in
-      warning txt p.pos
-  | _ -> ()
+      warning txt p.pos;
+      r
+  | _ -> r
 
 let check_prog_label labels label =
   match SMap.find_opt label.v labels with
@@ -52,8 +44,8 @@ let process_load_label (data_sections : data_section) prog_labels l =
   | Some i -> Either.left i
   | None -> check_prog_label prog_labels l |> Either.right
 
-let compile_load_imm instr r1 imm r2 =
-  match Int16.of_int32 imm with
+let compile_load instr r1 int16 r2 =
+  match int16 with
   | Int16.Single imm ->
       let i = TLoadImmediateAdd (r1, imm, LowHalf, r2) in
       Monoid.of_elm (mk_pos instr i)
@@ -77,124 +69,124 @@ let process_instr data_sections
   match instr.v with
   | Nop -> return instr (TAnd (R0, R0, R0))
   | And (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TAnd (r1, r2, r3))
   | Or (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TOr (r1, r2, r3))
   | Nor (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TNor (r1, r2, r3))
   | Xor (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TXor (r1, r2, r3))
   | Not (r1, r2) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
       return instr (TXor (r1, r2, R0))
   | Add (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TAdd (r1, r2, r3))
   | Sub (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TSub (r1, r2, r3))
   | Mul (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TMul (r1, r2, r3))
   | Div (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TDiv (r1, r2, r3))
   | Neg (r1, r2) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
       return instr (TSub (r1, R0, r2))
   | Incr (r1, r2) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
       return instr (TAdd (r1, r2, R1))
   | Decr (r1, r2) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
       return instr (TSub (r1, r2, R1))
   | ShiftLeftLogical (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TShiftLeftLogical (r1, r2, r3))
   | ShiftRightArith (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TShiftRightArith (r1, r2, r3))
   | ShiftRightLogical (r1, r2, r3) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      check_readable_register r3 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let r3 = check_readable_register r3 instr in
       return instr (TShiftRightLogical (r1, r2, r3))
   | Push r1 ->
-      check_readable_register r1 instr;
+      let r1 = check_readable_register r1 instr in
       return_l instr [ TStore (SP, r1); TAdd (SP, SP, R1) ]
   | Pop r1 ->
-      check_writable_reg r1 instr;
+      let r1 = check_writable_reg r1 instr in
       return_l instr [ TLoad (r1, SP); TSub (SP, SP, R1) ]
   | Load (r1, r2) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
       return instr (TLoad (r1, r2))
   | LoadImmediate (r1, imm) ->
-      check_writable_reg r1 instr;
-      let imm = check_immediate imm in
-      (compile_load_imm instr r1 imm R0, None, None)
+      let r1 = check_writable_reg r1 instr in
+      let imm = immediate_to_int16 imm in
+      (compile_load instr r1 imm R0, None, None)
   | LoadImmediateAdd (r1, imm, r2) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
-      let imm = check_immediate imm in
-      (compile_load_imm instr r1 imm r2, None, None)
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
+      let imm = immediate_to_int16 imm in
+      (compile_load instr r1 imm r2, None, None)
   | LoadImmediateLabel (r1, label) -> (
-      check_writable_reg r1 instr;
+      let r1 = check_writable_reg r1 instr in
       match process_load_label data_sections prog_labels label with
       | Left (lid, _) ->
-          let i = TLoadDataLabelAdd (r1, lid, R0) in
-          (Monoid.of_elm (mk_pos instr i), None, Some lid)
+          let l = compile_load instr r1 (MemoryAddress.to_int16 lid) R0 in
+          (l, None, Some lid)
       | Right lid ->
           let i = TLoadProgLabelAdd (r1, lid, R0) in
           (Monoid.of_elm (mk_pos instr i), Some lid, None))
   | LoadImmediateAddLabel (r1, label, r2) -> (
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
       match process_load_label data_sections prog_labels label with
       | Left (lid, _) ->
-          let i = TLoadDataLabelAdd (r1, lid, r2) in
-          (Monoid.of_elm (mk_pos instr i), None, Some lid)
+          let l = compile_load instr r1 (MemoryAddress.to_int16 lid) r2 in
+          (l, None, Some lid)
       | Right lid ->
           let i = TLoadProgLabelAdd (r1, lid, r2) in
           (Monoid.of_elm (mk_pos instr i), Some lid, None))
   | Store (r1, r2) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
       return instr (TStore (r1, r2))
   | Mov (r1, r2) ->
-      check_writable_reg r1 instr;
-      check_readable_register r2 instr;
+      let r1 = check_writable_reg r1 instr in
+      let r2 = check_readable_register r2 instr in
       return instr (TAdd (r1, r2, R0))
   | Test r1 ->
-      check_readable_register r1 instr;
+      let r1 = check_readable_register r1 instr in
       return instr (TAdd (R0, r1, R0))
   | JmpLabel label ->
       let lid = check_prog_label prog_labels label in
@@ -211,10 +203,10 @@ let process_instr data_sections
       in
       (Monoid.of_list (mk_pos_l instr l), Some lid, None)
   | JmpAddr r1 ->
-      check_readable_register r1 instr;
+      let r1 = check_readable_register r1 instr in
       return instr (TJmpAddr r1)
   | JmpAddrCond (f, r1) ->
-      check_readable_register r1 instr;
+      let r1 = check_readable_register r1 instr in
       return instr (TJmpAddrCond (f, r1))
   | JmpOffset imm ->
       let imm = check_offset imm in
@@ -230,12 +222,12 @@ let process_instr data_sections
       return instr (TJmpImmediateCond (f, imm))
   | Halt ->
       (* We set [PrivateReg] to 0xffffffff *)
-      let l = compile_load_imm instr PrivateReg 0xffffffffl R0 in
+      let l = compile_load instr PrivateReg (Int16.of_int32 0xffffffffl) R0 in
       (* And we jump *)
       let j = Monoid.of_elm (mk_pos instr (TJmpAddr PrivateReg)) in
       (Monoid.(l @@ j), None, None)
   | CallAddr r1 ->
-      check_readable_register r1 instr;
+      let r1 = check_readable_register r1 instr in
       return instr (TCallAddr r1)
   | CallLabel label ->
       let lid = check_prog_label prog_labels label in
