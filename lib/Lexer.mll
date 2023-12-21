@@ -105,7 +105,6 @@ let identifier = (upper | lower) (lower | upper | digit | '.')*
 let offset = ('+' | '-') dec_integer
 let label = "$" identifier
 let text_inst = '#' identifier
-let space = ' '+
 
 rule next_token = parse
   | eol { Lexing.new_line lexbuf; next_token lexbuf }
@@ -199,6 +198,3 @@ and string_lex = parse
     | _ as c
       { Buffer.add_char string_buffer c; string_lex lexbuf }
 
-{ 
-
-}

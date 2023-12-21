@@ -1,6 +1,6 @@
 open Parser
 
-let rec gen_token =
+let rec next_token =
   let tokens = Queue.create () in
   fun lb ->(
     if Queue.is_empty tokens then (
@@ -19,7 +19,7 @@ let rec gen_token =
           let f_lb = Lexing.from_channel f in
           let rec lex_tokens acc =
             (
-            match gen_token f_lb with
+            match next_token f_lb with
             | EOF -> List.rev acc
             | tokens -> lex_tokens ([tokens] @ acc)
             )
@@ -29,7 +29,7 @@ let rec gen_token =
           List.iter (fun x -> Queue.add x tokens ) r;
           Queue.pop tokens
       )
-      | _ -> raise (Lexer.Lexing_error "using include without a string after it")
+      | _ -> raise (Lexer.Lexing_error "Using include without a string (a string should be surrounded by \"\") after it.")
     )
     | _ -> t
 )
