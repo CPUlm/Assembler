@@ -32,6 +32,10 @@ let warning txt (pos : Ast.position) =
     Format.eprintf "%a@.%a: %s@." pp_error_head pos (pp_severity "33") "Warning"
       txt
 
+let file_warning txt =
+  if !fatal_warnings then file_error (txt ^ " (promoted warning)")
+  else Format.eprintf "%a: %s@." (pp_severity "33") "Warning" txt
+
 let rec pp_slist f ppf l =
   match l with
   | [] -> assert false

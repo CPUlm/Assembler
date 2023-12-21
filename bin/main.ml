@@ -37,7 +37,7 @@ let () =
   try
     let file = Parser.file Lexer.next_token lexbuf in
     let data_section = EncodeData.encode_data file in
-    let checked_ast = EncodeInstruction.pre_encode_instr data_section file in
+    let checked_ast = ProcessInstruction.pre_encode_instr data_section file in
     ignore checked_ast
   with
   | Lexer.Lexing_error msg ->
