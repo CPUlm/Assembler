@@ -1,39 +1,15 @@
-open Ast
+open PositionUtils
+open Integers
 open ErrorUtils
-
-module Int16 : sig
-  type t
-  type res = Single of t | Multiple of { low : t; high : t }
-
-  val zero : t
-  val of_int32 : int32 -> res
-end = struct
-  type t = int32
-  type res = Single of t | Multiple of { low : t; high : t }
-
-  let two_16 = Int32.(shift_left one 16)
-  let is_16bit imm = 0l <= imm && imm < two_16
-  let zero = 0l
-
-  let of_int32 i =
-    if is_16bit i then Single i
-    else
-      let low, high =
-        (Int32.(logand i 0xffffl), Int32.(shift_right_logical i 16))
-      in
-      Multiple { low; high }
-end
 
 module type Address = sig
   type t
 
   val zero : t
-  val of_imm : immediate -> t
   val add_section : t -> string * int * position -> t
   val next : t -> string * int * position -> 'a pos -> t
-  val with_offset : t -> int * position -> t
-  val fit_16bit : t -> int * position -> bool
-  val to_int16 : t -> Int16.res
+  val with_offset : t -> Offset.t -> t
+  val to_uint16 : t -> UInt16.res
 
   module Set : Set.S with type elt = t
 
@@ -44,57 +20,17 @@ module type Address = sig
   type 'a map = 'a Map.t
 end
 
-let _ =
-  if Sys.int_size < 33 then
-    failwith "The size of the integers available is not large enough."
-
-let is_signed, is_unsigned =
-  let two_32 = 1 lsl 32 in
-  let two_31 = 1 lsl 31 in
-  let neg_two_31 = -two_31 in
-  ((fun i -> neg_two_31 <= i && i < two_31), fun i -> 0 <= i && i < two_32)
-
-let is_32bit i = is_unsigned i || is_signed i
-
-let check_immediate imm =
-  if is_32bit imm.v then Int32.of_int imm.v
-  else
-    let txt =
-      Format.sprintf "The value '%d' cannot be represented on 32 bit." imm.v
-    in
-    error txt imm.pos
-
-let check_offset imm =
-  if is_32bit imm.v then imm.v (* TODO, change here *)
-  else
-    let txt =
-      Format.sprintf
-        "The value '%d' does not represent a valid 32-bit program address \
-         offset."
-        imm.v
-    in
-    error txt imm.pos
-
-let immediate_to_int16 imm = Int16.of_int32 (check_immediate imm)
-
 module Address32Bit : Address = struct
   type t = int
 
   let zero = 0
-
-  let of_imm imm =
-    if is_32bit imm.v then imm.v
-    else
-      let txt =
-        Format.sprintf
-          "The value '%d' does not represent a valid 32-bit address." imm.v
-      in
-      error txt imm.pos
+  let last = 0xffffffff
+  let is_valid i = 0 <= i && i <= last
 
   let add_section t sec =
     let sec_name, sec_size, sec_pos = sec in
     let new_addr = t + sec_size in
-    if is_32bit new_addr then new_addr
+    if is_valid new_addr then new_addr
     else
       let txt =
         Format.sprintf
@@ -107,7 +43,7 @@ module Address32Bit : Address = struct
 
   let next t sec _ =
     let new_addr = t + 1 in
-    if is_32bit new_addr then new_addr
+    if is_valid new_addr then new_addr
     else
       let sec_name, sec_beg, sec_pos = sec in
       let txt =
@@ -120,20 +56,14 @@ module Address32Bit : Address = struct
 
   let with_offset t (offset, pos) =
     let new_addr = t + offset in
-    if is_32bit new_addr then new_addr
+    if is_valid new_addr then new_addr
     else
       let txt =
         Format.sprintf "The address '%x' is not a 32bit integer." new_addr
       in
       error txt pos
 
-  let fit_16bit t ofs =
-    let i = with_offset t ofs in
-    match Int16.of_int32 (Int32.of_int i) with
-    | Single _ -> true
-    | Multiple _ -> false
-
-  let to_int16 t = Int16.of_int32 (Int32.of_int t)
+  let to_uint16 i = UInt16.of_int32 (Int32.of_int i)
 
   module Set = Set.Make (Int)
 

@@ -1,12 +1,13 @@
 open Ast
 open TAst
+open Integers
+open PositionUtils
 open EncodeCommon
 open ErrorUtils
 
-let mk_pos i r : tinstr = { v = r; pos = i.pos }
-let mk_pos_l i = List.map (mk_pos i)
-let return i r = (Monoid.of_elm (mk_pos i r), None, None)
-let return_l i r = (Monoid.of_list (mk_pos_l i r), None, None)
+let mk_pos_l p l = List.map (mk_pos p.pos) l
+let return p r = (Monoid.of_elm (mk_pos p.pos r), None, None)
+let return_l p l = (Monoid.of_list (mk_pos_l p l), None, None)
 
 let check_readable_register r p =
   match r with
@@ -46,17 +47,17 @@ let process_load_label (data_sections : data_section) prog_labels l =
 
 let compile_load instr r1 int16 r2 =
   match int16 with
-  | Int16.Single imm ->
+  | UInt16.Single imm ->
       let i = TLoadImmediateAdd (r1, imm, LowHalf, r2) in
-      Monoid.of_elm (mk_pos instr i)
-  | Int16.Multiple i ->
+      Monoid.of_elm (mk_pos instr.pos i)
+  | UInt16.Multiple i ->
       let l =
         [
           TLoadImmediateAdd (r1, i.low, LowHalf, r2);
           TLoadImmediateAdd (r1, i.high, HighHalf, r1);
         ]
       in
-      Monoid.of_list (List.map (mk_pos instr) l)
+      Monoid.of_list (List.map (mk_pos instr.pos) l)
 
 (** [process_instr data_sections prog_labels instr] : Check that the instruction
     is wellformed and return a siplified version of it, with the program label
@@ -151,32 +152,32 @@ let process_instr data_sections
       return instr (TLoad (r1, r2))
   | LoadImmediate (r1, imm) ->
       let r1 = check_writable_reg r1 instr in
-      let imm = immediate_to_int16 imm in
+      let imm = Immediate.to_uint16 imm in
       (compile_load instr r1 imm R0, None, None)
   | LoadImmediateAdd (r1, imm, r2) ->
       let r1 = check_writable_reg r1 instr in
       let r2 = check_readable_register r2 instr in
-      let imm = immediate_to_int16 imm in
+      let imm = Immediate.to_uint16 imm in
       (compile_load instr r1 imm r2, None, None)
   | LoadImmediateLabel (r1, label) -> (
       let r1 = check_writable_reg r1 instr in
       match process_load_label data_sections prog_labels label with
       | Left (lid, _) ->
-          let l = compile_load instr r1 (MemoryAddress.to_int16 lid) R0 in
+          let l = compile_load instr r1 (MemoryAddress.to_uint16 lid) R0 in
           (l, None, Some lid)
       | Right lid ->
           let i = TLoadProgLabelAdd (r1, lid, R0) in
-          (Monoid.of_elm (mk_pos instr i), Some lid, None))
+          (Monoid.of_elm (mk_pos instr.pos i), Some lid, None))
   | LoadImmediateAddLabel (r1, label, r2) -> (
       let r1 = check_writable_reg r1 instr in
       let r2 = check_readable_register r2 instr in
       match process_load_label data_sections prog_labels label with
       | Left (lid, _) ->
-          let l = compile_load instr r1 (MemoryAddress.to_int16 lid) r2 in
+          let l = compile_load instr r1 (MemoryAddress.to_uint16 lid) r2 in
           (l, None, Some lid)
       | Right lid ->
           let i = TLoadProgLabelAdd (r1, lid, r2) in
-          (Monoid.of_elm (mk_pos instr i), Some lid, None))
+          (Monoid.of_elm (mk_pos instr.pos i), Some lid, None))
   | Store (r1, r2) ->
       let r1 = check_writable_reg r1 instr in
       let r2 = check_readable_register r2 instr in
@@ -208,30 +209,22 @@ let process_instr data_sections
   | JmpAddrCond (f, r1) ->
       let r1 = check_readable_register r1 instr in
       return instr (TJmpAddrCond (f, r1))
-  | JmpOffset imm ->
-      let imm = check_offset imm in
-      return instr (TJmpOffset imm)
-  | JmpOffsetCond (f, imm) ->
-      let imm = check_offset imm in
-      return instr (TJmpOffsetCond (f, imm))
-  | JmpImmediate imm ->
-      let imm = ProgramAddress.of_imm imm in
-      return instr (TJmpImmediate imm)
-  | JmpImmediateCond (f, imm) ->
-      let imm = ProgramAddress.of_imm imm in
-      return instr (TJmpImmediateCond (f, imm))
+  | JmpOffset imm -> return instr (TJmpOffset imm)
+  | JmpOffsetCond (f, imm) -> return instr (TJmpOffsetCond (f, imm))
+  | JmpImmediate imm -> return instr (TJmpImmediate imm)
+  | JmpImmediateCond (f, imm) -> return instr (TJmpImmediateCond (f, imm))
   | Halt ->
       (* We set [PrivateReg] to 0xffffffff *)
-      let l = compile_load instr PrivateReg (Int16.of_int32 0xffffffffl) R0 in
+      let l = compile_load instr PrivateReg (UInt16.of_int32 0xffffffffl) R0 in
       (* And we jump *)
-      let j = Monoid.of_elm (mk_pos instr (TJmpAddr PrivateReg)) in
+      let j = Monoid.of_elm (mk_pos instr.pos (TJmpAddr PrivateReg)) in
       (Monoid.(l @@ j), None, None)
   | CallAddr r1 ->
       let r1 = check_readable_register r1 instr in
       return instr (TCallAddr r1)
   | CallLabel label ->
       let lid = check_prog_label prog_labels label in
-      let m = Monoid.of_elm (mk_pos instr (TCallLabel lid)) in
+      let m = Monoid.of_elm (mk_pos instr.pos (TCallLabel lid)) in
       (m, Some lid, None)
   | Ret ->
       return_l instr

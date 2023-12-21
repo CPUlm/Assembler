@@ -1,5 +1,7 @@
+open PositionUtils
 open Ast
 open EncodeCommon
+open Integers
 
 module type Id = sig
   type t
@@ -65,21 +67,21 @@ and tinstr_kind =
   | TShiftRightLogical of reg * reg * reg
   (* Memory operations *)
   | TLoad of reg * reg
-  | TLoadImmediateAdd of reg * Int16.t * load_mode * reg
+  | TLoadImmediateAdd of reg * UInt16.t * load_mode * reg
   | TLoadProgLabelAdd of reg * ProgramLabel.t * reg
   | TStore of reg * reg
   (* Flow instructions *)
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
-  | TJmpOffset of int
-  | TJmpOffsetCond of flag * int
-  | TJmpImmediate of ProgramAddress.t
-  | TJmpImmediateCond of flag * ProgramAddress.t
+  | TJmpOffset of Offset.t
+  | TJmpOffsetCond of flag * Offset.t
+  | TJmpImmediate of Immediate.t
+  | TJmpImmediateCond of flag * Immediate.t
   (* Function Call *)
   | TCallAddr of reg
   | TCallLabel of ProgramLabel.t
 
-type data = TString of (int * bytes) | TInt of int32
+type data = TString of (int * bytes) | TInt of Immediate.t
 
 module SSet = Set.Make (String)
 module SMap = Map.Make (String)

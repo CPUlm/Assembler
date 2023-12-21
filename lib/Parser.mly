@@ -1,10 +1,6 @@
 %{
   open Ast
   open ParsingUtils
-  open PositionUtils
-
-  let mk_pos loc data =
-      { v = data; pos = lexloc_to_pos loc }
 %}
 
 %token EOF
@@ -21,7 +17,7 @@
 %token <Ast.flag> JMPC
 
 (* Directives *)
-%token DATA TEXT STRING ZSTRING UINT INT
+%token DATA TEXT STRING ZSTRING INT
 
 (* Registers *)
 %token <int> R
@@ -37,15 +33,15 @@
 %%
 
 %inline reg:
-  | ROUT { ROut }
-  | SP { SP }
-  | FP { FP }
+  | ROUT  { ROut }
+  | SP    { SP }
+  | FP    { FP }
   | RPRIV { PrivateReg }
-  | r=R { int_to_reg r }
+  | r=R   { int_to_reg $loc r }
 
-%inline imm: i=IMM { mk_pos $loc i }
-%inline lbl: l=LBL { mk_pos $loc l }
-%inline offs: o=OFFS { mk_pos $loc o }
+%inline imm: i=IMM   { mk_imm $loc i }
+%inline lbl: l=LBL   { mk_pos $loc l }
+%inline offs: o=OFFS { mk_offset $loc o }
 
 inst_without_label:
   | AND r1=reg r2=reg r3=reg   { mk_pos $loc (And (r1, r2, r3)) }
@@ -92,12 +88,7 @@ inst:
   | i = inst_without_label { (None, i) }
 
 color:
-  | i=IDENT | i=STR
-    {
-        match str_to_col i with
-        | Some c -> c
-        | None -> ErrorUtils.error ("Unknown color " ^ i) ((lexloc_to_pos $loc))
-    }
+  | i=IDENT | i=STR { str_to_col $loc i }
 
 styled_string:
   | s=STR { (Text s) }
@@ -139,9 +130,9 @@ styled_string:
   }
 
 data_without_label:
-  | STRING s=styled_string  { mk_pos $loc (Str s) }
-  | ZSTRING s=styled_string { mk_pos $loc (Str (Concat (s, Text "\000"))) }
-  | INT u=IMM | UINT u=IMM { mk_pos $loc (Int (int_to_pos $loc u)) }
+  | STRING s=styled_string  { Str s }
+  | ZSTRING s=styled_string { Str (Concat (s, Text "\000")) }
+  | INT i=imm               { Int i }
 
 data:
   | l=IDENT COLON d = data_without_label { (Some (mk_pos $loc(l) l), d) }

@@ -63,7 +63,6 @@ let resolve_directive =
           (".data", DATA);
           (".string", STRING);
           (".zstring", ZSTRING);
-          (".uint", UINT);
           (".int", INT);
           (* TODO: add support for .include *)
         ]

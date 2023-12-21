@@ -1,8 +1,8 @@
 open Ast
+open Integers
+open PositionUtils
 
-exception Except of string
-
-let int_to_reg i =
+let int_to_reg loc i =
   match i with
   | 0 -> R0
   | 1 -> R1
@@ -32,7 +32,10 @@ let int_to_reg i =
   | 25 -> R25
   | 26 -> R26
   | 27 -> R27
-  | _ -> raise (Except ("Unknown register r" ^ string_of_int i))
+  | _ ->
+      let pos = lexloc_to_pos loc in
+      let txt = Format.sprintf "Unknown register r%d." i in
+      ErrorUtils.error txt pos
 
 let str_to_col =
   let colors = Hashtbl.create 11 in
@@ -56,4 +59,35 @@ let str_to_col =
       ("brightcyan", BrightCyan);
       ("brightwhite", BrightWhite);
     ];
-  fun s -> Hashtbl.find_opt colors s
+  fun loc s ->
+    match Hashtbl.find_opt colors s with
+    | Some c -> c
+    | None ->
+        let pos = lexloc_to_pos loc in
+        let txt = Format.sprintf "Unknown color '%s'." s in
+        ErrorUtils.error txt pos
+
+let mk_pos loc data = { v = data; pos = lexloc_to_pos loc }
+
+let mk_imm loc i =
+  match Immediate.of_int i with
+  | Some i -> i
+  | None ->
+      let pos = lexloc_to_pos loc in
+      let txt =
+        Format.sprintf "The value '%d' cannot be represented on 32 bit." i
+      in
+      ErrorUtils.error txt pos
+
+let mk_offset loc i =
+  let pos = lexloc_to_pos loc in
+  match Offset.of_int i pos with
+  | Some i -> i
+  | None ->
+      let txt =
+        Format.sprintf
+          "The value '%d' does not represent a valid 32-bit program address \
+           offset."
+          i
+      in
+      ErrorUtils.error txt pos

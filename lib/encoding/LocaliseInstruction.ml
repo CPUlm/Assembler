@@ -1,11 +1,11 @@
 open TAst
 open PAst
-open EncodeCommon
+open Integers
 
 let add_instr_p pos (addr, l) v =
   (ProgramAddress.next addr pos (assert false), l @ [ (addr, v) ])
 
-let encode_load curr_addr pos instr r1 (i : Int16.res) r2 =
+let encode_load curr_addr pos instr r1 (i : UInt16.res) r2 =
   match i with
   | Single imm ->
       let p1 = curr_addr in
@@ -28,7 +28,7 @@ let compile_jump accc pos instr target_addr =
   let curr_addr, acc, a2c = accc in
   let next_addr, l =
     encode_load curr_addr pos instr PrivateReg
-      (ProgramAddress.to_int16 target_addr)
+      (ProgramAddress.to_uint16 target_addr)
       R0
   in
   let l = l @ [ (next_addr, PJmpAddr PrivateReg) ] in
@@ -39,7 +39,7 @@ let compile_jump_cond accc pos instr f target_addr =
   let curr_addr, acc, a2c = accc in
   let next_addr, l =
     encode_load curr_addr pos instr PrivateReg
-      (ProgramAddress.to_int16 target_addr)
+      (ProgramAddress.to_uint16 target_addr)
       R0
   in
   let l = l @ [ (next_addr, PJmpAddrCond (f, PrivateReg)) ] in
@@ -49,17 +49,17 @@ let compile_jump_cond accc pos instr f target_addr =
 let setup_stack curr_addr pos (instr : tinstr) nb_op =
   let ret_addr =
     let ofs = nb_op + 5 (* nb of op without load to setup the stack *) in
-    let ofs =
-      if ProgramAddress.fit_16bit curr_addr (ofs, instr.pos) then
-        ofs + 1 (* only one load needed *)
-      else ofs + 2 (* two load here *)
-    in
+    (* let ofs =
+         if ProgramAddress.fit_16bit curr_addr (ofs, instr.pos) then
+           ofs + 1 (* only one load needed *)
+         else ofs + 2 (* two load here *)
+       in *)
     ProgramAddress.with_offset curr_addr (ofs, instr.pos)
   in
   (* We load [ret_addr] into [PrivateReg] *)
   let na, l =
     encode_load curr_addr pos instr PrivateReg
-      (ProgramAddress.to_int16 ret_addr)
+      (ProgramAddress.to_uint16 ret_addr)
       R0
   in
   (* And push it to the stack *)
@@ -112,16 +112,12 @@ let localise_section begin_addr instrs pos =
       | TJmpAddr r1 -> incr_and_ret accc (PJmpAddr r1)
       | TJmpAddrCond (f, r1) -> incr_and_ret accc (PJmpAddrCond (f, r1))
       | TJmpOffset offset ->
-          let target_addr =
-            ProgramAddress.with_offset curr_addr (offset, assert false)
-          in
+          let target_addr = ProgramAddress.with_offset curr_addr offset in
           (* compile_jump accc pos instr target_addr *)
           ignore target_addr;
           assert false
       | TJmpOffsetCond (f, offset) ->
-          let target_addr =
-            ProgramAddress.with_offset curr_addr (offset, assert false)
-          in
+          let target_addr = ProgramAddress.with_offset curr_addr offset in
           (* compile_jump_cond accc pos (assert false) f target_addr (assert false) *)
           ignore (f, target_addr);
           assert false

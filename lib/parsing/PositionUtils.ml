@@ -1,4 +1,14 @@
-open Ast
+type position = {
+  beg_col : int;
+  beg_line : int;
+  end_col : int;
+  end_line : int;
+  file : string;
+}
+
+type 'a pos = { v : 'a; pos : position }
+
+let mk_pos pos x = { v = x; pos }
 
 (** Convert the [$loc] of menhir to a position. *)
 let lexloc_to_pos (pos : Lexing.position * Lexing.position) =
@@ -14,13 +24,13 @@ let lexloc_to_pos (pos : Lexing.position * Lexing.position) =
     file;
   }
 
-let label_to_pos (pos : Lexing.position * Lexing.position) l : label =
+let label_to_pos (pos : Lexing.position * Lexing.position) l =
   let p = lexloc_to_pos pos in
-  { v = l; pos = p }
+  mk_pos p l
 
-let int_to_pos (pos : Lexing.position * Lexing.position) i : immediate =
+let int_to_pos (pos : Lexing.position * Lexing.position) i =
   let p = lexloc_to_pos pos in
-  { v = i; pos = p }
+  mk_pos p i
 
 (** Convert the current position of the [lexbuf] to a position. *)
 let lexbuf_to_pos lexbuf =

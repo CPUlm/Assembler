@@ -1,12 +1,10 @@
-type position = {
-  beg_col : int;
-  beg_line : int;
-  end_col : int;
-  end_line : int;
-  file : string;
-}
+open Integers
+open PositionUtils
 
-type 'a pos = { v : 'a; pos : position }
+let _ =
+  if Sys.int_size < 33 then
+    failwith "The size of the integers available is not large enough."
+
 type label = string pos
 
 (** Allowed Registers *)
@@ -86,9 +84,6 @@ and text =
   | Style of text_style * text
   | Text of string
 
-type immediate = int pos
-(** An immediate with position *)
-
 type inst = inst_kind pos
 (** All possible instructions *)
 
@@ -117,9 +112,9 @@ and inst_kind =
   | Pop of reg (* Pseudo instr *)
   (* Memory operations *)
   | Load of reg * reg
-  | LoadImmediate of reg * immediate
+  | LoadImmediate of reg * Immediate.t
   | LoadImmediateLabel of reg * label
-  | LoadImmediateAdd of reg * immediate * reg
+  | LoadImmediateAdd of reg * Immediate.t * reg
   | LoadImmediateAddLabel of reg * label * reg
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)
@@ -129,20 +124,18 @@ and inst_kind =
   | JmpLabelCond of flag * label (* Pseudo instr *)
   | JmpAddr of reg
   | JmpAddrCond of flag * reg
-  | JmpOffset of immediate
-  | JmpOffsetCond of flag * immediate
-  | JmpImmediate of immediate
-  | JmpImmediateCond of flag * immediate
+  | JmpOffset of Offset.t
+  | JmpOffsetCond of flag * Offset.t
+  | JmpImmediate of Immediate.t
+  | JmpImmediateCond of flag * Immediate.t
   | Halt
   (* Functions *)
   | CallLabel of label (* Pseudo instr *)
   | CallAddr of reg (* Pseudo instr *)
   | Ret (* Pseudo instr *)
 
-type data = data_kind pos
 (** All possible data *)
-
-and data_kind = Str of text | Int of immediate
+and data = Str of text | Int of Immediate.t
 
 type file = {
   text : (label option * inst) list;

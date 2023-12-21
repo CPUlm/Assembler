@@ -1,5 +1,6 @@
 open Ast
 open TAst
+open Integers
 open ErrorUtils
 open EncodeCommon
 
@@ -91,9 +92,7 @@ let of_text t =
 (** [process_data data] : Convert the data declaration [data] to a well-formed
     one. *)
 let process_data data =
-  match data.v with
-  | Str text -> TString (of_text text)
-  | Int i -> TInt (check_immediate i)
+  match data with Str text -> TString (of_text text) | Int i -> TInt i
 
 let encode_section sec =
   let size, bytes_list =
@@ -101,9 +100,8 @@ let encode_section sec =
       (fun (cur_pos, data) i ->
         match process_data i with
         | TString (size, str) -> (cur_pos + size, data @ [ str ])
-        | TInt i ->
-            let b = Bytes.create 4 in
-            Bytes.set_int32_le b 0 i;
+        | TInt imm ->
+            let b = Immediate.to_word imm in
             (cur_pos + 1, data @ [ b ]))
       (0, []) sec
   in
