@@ -35,18 +35,23 @@ let lexbuf =
 
 let () =
   try
-    let file = Parser.file Lexer.next_token lexbuf in
+    let file = Parser.file (PostLexer.gen_token) lexbuf in
     let data_section = EncodeData.encode_data file in
-    let checked_ast = EncodeInstruction.pre_encode_instr data_section file in
+    let checked_ast = ProcessInstruction.pre_encode_instr data_section file in
     ignore checked_ast
   with
   | Lexer.Lexing_error msg ->
       let s = Lexing.lexeme_start_p lexbuf in
       let e = Lexing.lexeme_end_p lexbuf in
       let p = PositionUtils.lexloc_to_pos (s, e) in
-      ErrorUtils.error msg p
+      ErrorUtils.error ("cheh2 " ^ msg) p
   | Parser.Error ->
       let s = Lexing.lexeme_start_p lexbuf in
       let e = Lexing.lexeme_end_p lexbuf in
       let p = PositionUtils.lexloc_to_pos (s, e) in
       ErrorUtils.error "Syntax error." p
+    | _ -> 
+      let s = Lexing.lexeme_start_p lexbuf in
+      let e = Lexing.lexeme_end_p lexbuf in
+      let p = PositionUtils.lexloc_to_pos (s, e) in
+      ErrorUtils.error "cheh" p

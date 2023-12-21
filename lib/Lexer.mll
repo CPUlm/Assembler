@@ -65,7 +65,7 @@ let resolve_directive =
           (".zstring", ZSTRING);
           (".uint", UINT);
           (".int", INT);
-          (* TODO: add support for .include *)
+          (".include",INCLUDE)
         ]
         );
   fun s -> try Hashtbl.find directives s with Not_found -> raise (Lexing_error ("Unknown directive " ^ s))
@@ -98,7 +98,7 @@ let upper = ['A'-'Z']
 let directive = '.' lower+
 let dec_integer = '0' | ['1'-'9'] digit*
 let bin_integer = "0b" ('0' | '1')+
-let hex_integer = "0x" (['0'-'9' 'a'-'f' 'A'-'F'])+
+let hex_integer = "0x" (['0'-'9' 'a'-'f' 'A'-'F' ])+
 let integer = dec_integer | bin_integer | hex_integer
 let register = ('R' | 'r') dec_integer
 let identifier = (upper | lower) (lower | upper | digit | '.')*
@@ -110,57 +110,40 @@ let space = ' '+
 rule next_token = parse
   | eol { Lexing.new_line lexbuf; next_token lexbuf }
   | ' ' | '\t' { next_token lexbuf }
-  | eof { [EOF] }
+  | eof { EOF }
   | ';' { line_comment lexbuf }
-  | ',' { [COMMA] }
-  | '+' { [PLUS] }
-  | ':' { [COLON] }
-  | '(' { [LPAR] }
-  | ')' { [RPAR]}
+  | ',' { COMMA }
+  | '+' { PLUS }
+  | ':' { COLON }
+  | '(' { LPAR }
+  | ')' { RPAR}
   | '"' { string_lex lexbuf }
-  | ".include" space '"' { (* si je mets pas le space '"' ça va parse '"' dans string et donc renvoyer le vide. *)
-    let sl = string_lex lexbuf in
-    match sl with
-    | [STR fname] -> (
-      let f =  open_in fname in
-      let f_lb = Lexing.from_channel f in
-      let rec lex_tokens acc =
-        match next_token f_lb with
-        | [EOF] -> List.rev acc
-        | tokens -> lex_tokens (tokens @ acc)
-      in
-      let r = lex_tokens [] in 
-      let _ = close_in f in
-      r
-    )
-    | _ -> raise (Lexing_error"mauvaise syntaxe de include")
-  }
   | integer as i
-    { [IMM (int_of_string i)] }
+    { IMM (int_of_string i) }
 
   | directive as d
-    { [resolve_directive d] }
+    { resolve_directive d }
 
   | label as l
     {
       let name = String.sub l 1 (String.length l - 1) in
-      [LBL name]
+      LBL name
     }
 
   | offset as o
-    { [OFFS (int_of_string o)] }
+    { OFFS (int_of_string o) }
 
   | register as r
     {
       let rnum = String.sub r 1 (String.length r - 1) in
-      [R(int_of_string rnum)]
+      R(int_of_string rnum)
     }
 
   | identifier as i
-    { [resolve_instruction i] }
+    { resolve_instruction i }
 
   | text_inst as i
-    { [resolve_text_inst i] }
+    { resolve_text_inst i }
 
   | ['\x20'-'\x7E'] as c
     {
@@ -179,7 +162,7 @@ and line_comment = parse
     { Lexing.new_line lexbuf; next_token lexbuf }
 
   | eof
-    { [EOF] }
+    { EOF }
 
   | _
     { line_comment lexbuf }
@@ -189,7 +172,7 @@ and string_lex = parse
       {
         let s = Buffer.contents string_buffer in
         Buffer.reset string_buffer;
-        [STR s]
+        STR s
       }
 
     | "\\\""
@@ -217,14 +200,5 @@ and string_lex = parse
       { Buffer.add_char string_buffer c; string_lex lexbuf }
 
 { 
-let next_token = 
-    let tokens = Queue.create () in (* prochains lexèmes à renvoyer *)
-    fun lb ->
-        if Queue.is_empty tokens then begin 
-            let a =next_token lb in
-            List.iter (fun t -> Queue.add t tokens) a;
-        end;
-        let b = Queue.pop tokens in
-        b
 
 }
