@@ -9,6 +9,9 @@ val of_list : 'a list -> 'a t
 val of_elm : 'a -> 'a t
 (** Build a monoid from of list. *)
 
+val is_empty : 'a t -> bool
+(** Checks if the monoid is empty *)
+
 val ( @@ ) : 'a t -> 'a t -> 'a t
 (** Concatenate two monoid . *)
 

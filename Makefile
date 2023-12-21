@@ -11,8 +11,7 @@ test: asm
 	@bash test/test.sh ./asm
 
 clean:
-	dune clean
-	rm -f asm
+	rm -rf _build/ asm
 	cd doc && latexmk -c asm.tex
 
 .PHONY: all clean test asm doc

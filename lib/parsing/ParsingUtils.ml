@@ -67,13 +67,11 @@ let str_to_col =
         let txt = Format.sprintf "Unknown color '%s'." s in
         ErrorUtils.error txt pos
 
-let mk_pos loc data = { v = data; pos = lexloc_to_pos loc }
-
 let mk_imm loc i =
+  let pos = lexloc_to_pos loc in
   match Immediate.of_int i with
-  | Some i -> i
+  | Some i -> mk_pos pos i
   | None ->
-      let pos = lexloc_to_pos loc in
       let txt =
         Format.sprintf "The value '%d' cannot be represented on 32 bit." i
       in
@@ -81,8 +79,8 @@ let mk_imm loc i =
 
 let mk_offset loc i =
   let pos = lexloc_to_pos loc in
-  match Offset.of_int i pos with
-  | Some i -> i
+  match Offset.of_int i with
+  | Some i -> mk_pos pos i
   | None ->
       let txt =
         Format.sprintf
@@ -91,3 +89,5 @@ let mk_offset loc i =
           i
       in
       ErrorUtils.error txt pos
+
+let mk_pos loc data = { v = data; pos = lexloc_to_pos loc }

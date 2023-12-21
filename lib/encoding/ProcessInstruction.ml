@@ -2,7 +2,7 @@ open Ast
 open TAst
 open Integers
 open PositionUtils
-open EncodeCommon
+open SplitFile
 open ErrorUtils
 
 let mk_pos_l p l = List.map (mk_pos p.pos) l
@@ -40,8 +40,8 @@ let check_prog_label labels label =
       let txt = Format.sprintf "The label '%s' is not defined." label.v in
       error txt label.pos
 
-let process_load_label (data_sections : data_section) prog_labels l =
-  match SMap.find_opt l.v data_sections.mapping with
+let process_load_label data_sections prog_labels l =
+  match SMap.find_opt l.v data_sections.data_mapping with
   | Some i -> Either.left i
   | None -> check_prog_label prog_labels l |> Either.right
 
@@ -60,11 +60,11 @@ let compile_load instr r1 int16 r2 =
       Monoid.of_list (List.map (mk_pos instr.pos) l)
 
 (** [process_instr data_sections prog_labels instr] : Check that the instruction
-    is wellformed and return a siplified version of it, with the program label
-    used if so, and the data label used if so.
+       is wellformed and return a siplified version of it, with the program label
+       used if so, and the data label used if so.
 
-    The boolean flag returned with the potentionally used program label, is here
-    to mark if its associated address must be stored in memory. *)
+       The boolean flag returned with the potentionally used program label, is here
+       to mark if its associated address must be stored in memory. *)
 let process_instr data_sections
     (prog_labels : (ProgramLabel.t * position) SMap.t) instr =
   match instr.v with
@@ -152,12 +152,12 @@ let process_instr data_sections
       return instr (TLoad (r1, r2))
   | LoadImmediate (r1, imm) ->
       let r1 = check_writable_reg r1 instr in
-      let imm = Immediate.to_uint16 imm in
+      let imm = Immediate.to_uint16 imm.v in
       (compile_load instr r1 imm R0, None, None)
   | LoadImmediateAdd (r1, imm, r2) ->
       let r1 = check_writable_reg r1 instr in
       let r2 = check_readable_register r2 instr in
-      let imm = Immediate.to_uint16 imm in
+      let imm = Immediate.to_uint16 imm.v in
       (compile_load instr r1 imm r2, None, None)
   | LoadImmediateLabel (r1, label) -> (
       let r1 = check_writable_reg r1 instr in
@@ -243,12 +243,12 @@ let process_instr data_sections
           TJmpAddr PrivateReg;
         ]
 
-let pre_encode_instr (data_sections : data_section) f =
+let pre_encode_instr data_sections f =
   let prog_sections, prog_labels =
     split_by_label
       ( SMap.empty,
         (fun l ->
-          match SMap.find_opt l.v data_sections.mapping with
+          match SMap.find_opt l.v data_sections.data_mapping with
           | None -> ProgramLabel.fresh (Some l.v)
           | Some (_, decl_pos) ->
               let txt =
@@ -265,13 +265,14 @@ let pre_encode_instr (data_sections : data_section) f =
   match SMap.find_opt "main" prog_labels with
   | None ->
       file_warning "No label 'main' found, skipping all instructions.";
-      []
+      Monoid.empty
   | Some (mainid, _) ->
-      let (used_prog_lbl, used_mem_lbl), prog_sections =
-        List.fold_left_map
-          (fun (pls, dls) (lid, insts) ->
-            let pls, dls, tinsts =
-              List.fold_left
+      let used_prog_lbl, used_mem_lbl, prog_sections =
+        Monoid.fold_left
+          (fun (pls, dls, acc) instr_sec ->
+            let label, insts = instr_sec.v in
+            let pls, dls, body =
+              Monoid.fold_left
                 (fun (pls, dls, acc) i ->
                   let a, pl, dl = process_instr data_sections prog_labels i in
                   let acc = Monoid.(acc @@ a) in
@@ -288,8 +289,9 @@ let pre_encode_instr (data_sections : data_section) f =
                   (pls, dls, acc))
                 (pls, dls, Monoid.empty) insts
             in
-            ((pls, dls), (lid, tinsts)))
-          (ProgramLabel.Set.empty, MemoryAddress.Set.empty)
+            let new_sec = { label; body; pos = instr_sec.pos } in
+            (pls, dls, Monoid.(acc @@ of_elm new_sec)))
+          (ProgramLabel.Set.empty, MemoryAddress.Set.empty, Monoid.empty)
           prog_sections
       in
       (* Mark main label as used to avoid useless warnings about it. It it always
@@ -303,7 +305,7 @@ let pre_encode_instr (data_sections : data_section) f =
       let unused_mem_label =
         SMap.filter
           (fun _ (lid, _) -> MemoryAddress.Set.mem lid used_mem_lbl |> not)
-          data_sections.mapping
+          data_sections.data_mapping
       in
       SMap.iter
         (fun label (_, pos) ->

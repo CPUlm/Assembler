@@ -67,3 +67,7 @@ let iteri f m =
   ()
 
 let to_list x = fold_left (fun acc x -> x :: acc) [] x |> List.rev
+
+let is_empty = function
+  | Empty -> true
+  | LeafElm _ | LeafL _ | Concat _ -> false

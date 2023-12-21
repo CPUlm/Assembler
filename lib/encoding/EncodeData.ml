@@ -2,7 +2,20 @@ open Ast
 open TAst
 open Integers
 open ErrorUtils
-open EncodeCommon
+open PositionUtils
+open SplitFile
+
+let add_section cur_pos sec_name sec_size sec_pos =
+  match MemoryAddress.next cur_pos with
+  | Some i -> i
+  | None ->
+      let txt =
+        Format.sprintf
+          "The section '%s' of size %d, is too long to be in a 32bit address \
+           space."
+          sec_name sec_size
+      in
+      error txt sec_pos
 
 module StyleSet = Set.Make (struct
   type t = Ast.text_style
@@ -90,22 +103,22 @@ let of_text t =
   of_text default_text_color default_background_color StyleSet.empty t
 
 (** [process_data data] : Convert the data declaration [data] to a well-formed
-    one. *)
+       one. *)
 let process_data data =
-  match data with Str text -> TString (of_text text) | Int i -> TInt i
+  match data.v with Str text -> TString (of_text text) | Int i -> TInt i.v
 
 let encode_section sec =
-  let size, bytes_list =
-    List.fold_left
+  let size, bytes_mon =
+    Monoid.fold_left
       (fun (cur_pos, data) i ->
         match process_data i with
-        | TString (size, str) -> (cur_pos + size, data @ [ str ])
+        | TString (size, str) -> (cur_pos + size, Monoid.(data @@ of_elm str))
         | TInt imm ->
             let b = Immediate.to_word imm in
-            (cur_pos + 1, data @ [ b ]))
-      (0, []) sec
+            (cur_pos + 1, Monoid.(data @@ of_elm b)))
+      (0, Monoid.empty) sec
   in
-  (size, Bytes.concat Bytes.empty bytes_list)
+  (size, bytes_mon)
 
 let encode_data (f : file) =
   let data_decls, _ =
@@ -122,17 +135,20 @@ let encode_data (f : file) =
         SSet.mem )
       f.data
   in
-  let next_free, data, mapping =
-    List.fold_left
-      (fun (cur_pos, data, mapping) ((sec_name, pos), sec) ->
-        let sec_size, sec_bytes = encode_section sec in
+  let mem_next_free, data, data_mapping =
+    Monoid.fold_left
+      (fun (cur_pos, data, mapping) sec ->
+        let (sec_name, pos), sec_insts = sec.v in
+        let sec_size, sec_bytes = encode_section sec_insts in
         let mapping = SMap.add sec_name (cur_pos, pos) mapping in
-        let cur_pos =
-          MemoryAddress.add_section cur_pos (sec_name, sec_size, pos)
-        in
-        (cur_pos, data @ [ sec_bytes ], mapping))
-      (MemoryAddress.zero, [], SMap.empty)
+        let cur_pos = add_section cur_pos sec_name sec_size pos in
+        (cur_pos, Monoid.(data @@ sec_bytes), mapping))
+      (MemoryAddress.zero, Monoid.empty, SMap.empty)
       data_decls
   in
-  let data_bytes = Bytes.concat Bytes.empty data in
-  { data_bytes; next_free; mapping }
+  let data_bytes =
+    Monoid.fold_left
+      (fun acc m -> Bytes.concat Bytes.empty [ acc; m ])
+      Bytes.empty data
+  in
+  { data_bytes; mem_next_free; data_mapping }

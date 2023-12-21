@@ -5,7 +5,14 @@ let _ =
   if Sys.int_size < 33 then
     failwith "The size of the integers available is not large enough."
 
+type immediate = Immediate.t pos
+(** A immediate with a position *)
+
+type offset = Offset.t pos
+(** A immediate with a position *)
+
 type label = string pos
+(** A string with a position *)
 
 (** Allowed Registers *)
 type reg =
@@ -112,9 +119,9 @@ and inst_kind =
   | Pop of reg (* Pseudo instr *)
   (* Memory operations *)
   | Load of reg * reg
-  | LoadImmediate of reg * Immediate.t
+  | LoadImmediate of reg * immediate
   | LoadImmediateLabel of reg * label
-  | LoadImmediateAdd of reg * Immediate.t * reg
+  | LoadImmediateAdd of reg * immediate * reg
   | LoadImmediateAddLabel of reg * label * reg
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)
@@ -124,18 +131,20 @@ and inst_kind =
   | JmpLabelCond of flag * label (* Pseudo instr *)
   | JmpAddr of reg
   | JmpAddrCond of flag * reg
-  | JmpOffset of Offset.t
-  | JmpOffsetCond of flag * Offset.t
-  | JmpImmediate of Immediate.t
-  | JmpImmediateCond of flag * Immediate.t
+  | JmpOffset of offset
+  | JmpOffsetCond of flag * offset
+  | JmpImmediate of immediate
+  | JmpImmediateCond of flag * immediate
   | Halt
   (* Functions *)
   | CallLabel of label (* Pseudo instr *)
   | CallAddr of reg (* Pseudo instr *)
   | Ret (* Pseudo instr *)
 
+type data = data_kind pos
 (** All possible data *)
-and data = Str of text | Int of Immediate.t
+
+and data_kind = Str of text | Int of immediate
 
 type file = {
   text : (label option * inst) list;

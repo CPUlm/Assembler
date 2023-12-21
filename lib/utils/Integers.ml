@@ -1,5 +1,3 @@
-open PositionUtils
-
 module UInt16 : sig
   type t
   type res = Single of t | Multiple of { low : t; high : t }
@@ -58,14 +56,76 @@ end = struct
   let is_valid i = neg_two_31 <= i && i < two_32
   let of_int i = if is_valid i then Some i else None
   let to_uint16 i = UInt16.of_int32 (Int32.of_int i)
-  let to_word _ = assert false
+
+  let to_word i =
+    let b = Bytes.create 4 in
+    Bytes.set_int32_le b 0 (Int32.of_int i);
+    b
 end
 
-module Offset = struct
-  type t = int * position
+module Offset : sig
+  type t
+
+  val of_int : int -> t option
+  (** Build an offset from an integer *)
+
+  val to_int : t -> int
+end = struct
+  type t = int
 
   let two_31 = 1 lsl 31
   let neg_two_31 = -two_31
   let is_valid i = neg_two_31 <= i && i < two_31
-  let of_int i loc = if is_valid i then Some (i, loc) else None
+  let of_int i = if is_valid i then Some i else None
+  let to_int = Fun.id
+end
+
+module type Address = sig
+  type t
+
+  val zero : t
+  val last : t
+  val add_section : t -> int -> t option
+  val next : t -> t option
+  val with_offset : t -> Offset.t -> t option
+  val to_uint16 : t -> UInt16.res
+
+  module Set : Set.S with type elt = t
+
+  type set = Set.t
+
+  module Map : Map.S with type key = t
+
+  type 'a map = 'a Map.t
+end
+
+module Address : Address = struct
+  type t = int
+
+  let zero = 0
+  let two_32 = 1 lsl 32
+  let last = two_32 - 1
+  let is_valid i = 0 <= i && i <= last
+
+  let add_section t ssize =
+    let new_addr = t + ssize in
+    if is_valid new_addr then Some new_addr else None
+
+  let next t =
+    let new_addr = t + 1 in
+    if is_valid new_addr then Some new_addr else None
+
+  let with_offset t offset =
+    let new_addr = t + Offset.to_int offset in
+    if is_valid new_addr then Some new_addr else None
+
+  let to_uint16 i = UInt16.of_int32 (Int32.of_int i)
+
+  module Set = Set.Make (Int)
+
+  type set = Set.t
+
+  module Map = Map.Make (Int)
+
+  type 'a map = 'a Map.t
 end

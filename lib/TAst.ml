@@ -1,6 +1,5 @@
 open PositionUtils
 open Ast
-open EncodeCommon
 open Integers
 
 module type Id = sig
@@ -41,8 +40,8 @@ module ProgramLabel : Id = struct
   type set = Set.t
 end
 
-module ProgramAddress : Address = Address32Bit
-module MemoryAddress : Address = Address32Bit
+module ProgramAddress : Address = Address
+module MemoryAddress : Address = Address
 
 (** The mode of the load *)
 type load_mode = HighHalf | LowHalf
@@ -73,10 +72,10 @@ and tinstr_kind =
   (* Flow instructions *)
   | TJmpAddr of reg
   | TJmpAddrCond of flag * reg
-  | TJmpOffset of Offset.t
-  | TJmpOffsetCond of flag * Offset.t
-  | TJmpImmediate of Immediate.t
-  | TJmpImmediateCond of flag * Immediate.t
+  | TJmpOffset of offset
+  | TJmpOffsetCond of flag * offset
+  | TJmpImmediate of immediate
+  | TJmpImmediateCond of flag * immediate
   (* Function Call *)
   | TCallAddr of reg
   | TCallLabel of ProgramLabel.t
@@ -92,10 +91,16 @@ let default_text_color = Black
 (** [default_background_color] : Default Background Color *)
 let default_background_color = White
 
-type data_section = {
+type data_file = {
   data_bytes : bytes;
-  next_free : MemoryAddress.t;
-  mapping : (MemoryAddress.t * position) SMap.t;
+  mem_next_free : MemoryAddress.t;
+  data_mapping : (MemoryAddress.t * position) SMap.t;
+}
+
+type instr_section = {
+  label : ProgramLabel.t;
+  body : tinstr Monoid.t;
+  pos : position;
 }
 
 let get_instr i = i.v

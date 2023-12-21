@@ -130,9 +130,9 @@ styled_string:
   }
 
 data_without_label:
-  | STRING s=styled_string  { Str s }
-  | ZSTRING s=styled_string { Str (Concat (s, Text "\000")) }
-  | INT i=imm               { Int i }
+  | STRING s=styled_string  { mk_pos $loc (Str s) }
+  | ZSTRING s=styled_string { mk_pos $loc (Str (Concat (s, Text "\000"))) }
+  | INT i=imm               { mk_pos $loc (Int i) }
 
 data:
   | l=IDENT COLON d = data_without_label { (Some (mk_pos $loc(l) l), d) }
