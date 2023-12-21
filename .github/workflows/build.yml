@@ -23,6 +23,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Cache opam packages
+      id: cache-opam
+      uses: actions/cache@v3
+      with:
+        key: ${{ matrix.os }}-${{ matrix.ocaml-compiler }}-build-ocaml
+        path: |
+          ~/.opam
+          ./_build/
+
     - name: Set-up OCaml ${{ matrix.ocaml-compiler }}
       uses: ocaml/setup-ocaml@v2
       with:
@@ -31,15 +40,6 @@ jobs:
 
     - name: Install menhir
       run: opam install menhir
-
-    - name: Cache opam packages
-      id: cache-opam
-      uses: actions/cache@v3
-      with:
-        key: ${{ matrix.os }}-${{ matrix.ocaml-compiler }}-build-ocaml
-        path: |
-            ~/.opam
-            ./_build/
 
     - name: Build
       run: make
