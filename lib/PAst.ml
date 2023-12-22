@@ -24,9 +24,8 @@ type pos_instr =
   | PLoadProgLabelAdd of reg * ProgramLabel.t * reg
   | PStore of reg * reg
   (* Flow instructions *)
-  | PJmpLabel of ProgramLabel.t
-  | PJmpLabelCond of flag * ProgramLabel.t
   | PJmpAddr of reg
   | PJmpAddrCond of flag * reg
   | PJmpImmediate of Int24.t
   | PJmpImmediateCond of flag * Int24.t
+  | PJmpFutureOffset of ProgramAddress.t * ProgramLabel.t

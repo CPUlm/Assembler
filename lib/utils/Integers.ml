@@ -74,6 +74,7 @@ module type Offset = sig
 
   val fit_in_int24 : t -> bool
   val to_int24 : t -> Int24.t option
+  val pp : Format.formatter -> t -> unit
 end
 
 module Offset = struct
@@ -85,6 +86,7 @@ module Offset = struct
   let of_int i = if is_valid i then Some i else None
   let fit_in_int24 t = is_int24 t
   let to_int24 t = Int24.of_int t
+  let pp ppf t = Format.fprintf ppf "%d" t
 end
 
 (** Module type of an immediate value in the program, ie. a 32bit constant. *)

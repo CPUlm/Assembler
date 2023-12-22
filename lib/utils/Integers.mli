@@ -33,6 +33,8 @@ module type Offset = sig
 
   val to_int24 : t -> Int24.t option
   (** [to_int24 o] returns the offset [o] expressed as an Int24 integer if possible *)
+
+  val pp : Format.formatter -> t -> unit
 end
 
 module Offset : Offset

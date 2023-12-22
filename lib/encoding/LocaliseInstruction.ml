@@ -5,8 +5,6 @@ open ErrorUtils
 open PositionUtils
 open Integers
 
-let ill_defined_address _ _ = assert false
-
 let next addr =
   (* We can force because we have a majoration *)
   Option.get (ProgramAddress.next addr)
@@ -64,49 +62,35 @@ let jump_offset acc ofs f =
       (* And jump to rpriv *)
       (add_instr acc (PJmpAddr PrivateReg), target_addr)
 
-(*
-let encode_load accc r1 (i : UInt16.res) r2 =
-  let curr_addr, acc, _ = accc in
-  match i with
-  | Single imm ->
-      add_instr (curr_addr, acc) (PLoadImmediateAdd (r1, imm, LowHalf, r2))
-  | Multiple imms ->
-      let na, l =
-        add_instr (curr_addr, acc)
-          (PLoadImmediateAdd (r1, imms.low, LowHalf, r2))
-      in
-      add_instr (na, l) (PLoadImmediateAdd (r1, imms.high, HighHalf, r1))
-*)
-(*
-let setup_stack curr_addr nb_op =
+let setup_stack acc nb_op =
   let ret_addr =
     let ofs =
       (* nb of op needed to setup the stack without the load of the return address *)
       nb_op + 5
     in
     let ofs =
-      if ProgramAddress.fit_in_uint16 curr_addr ofs then
+      if ProgramAddress.fit_in_uint16 (current_address acc) ofs then
         (* only one load needed for the return address *)
-        ofs + 1
-      else (* two load needed for the return address *) ofs + 2
+        Offset.of_int (ofs + 1)
+      else (* two load needed for the return address *) Offset.of_int (ofs + 2)
     in
-    ProgramAddress.unsafe_with_offset curr_addr ofs
+    (* This *should* be safe, if nb_op is not 100000 *)
+    let ofs = Option.get ofs in
+    ProgramAddress.with_offset (current_address acc) ofs
   in
   (* We load [ret_addr] into [PrivateReg] *)
-  let na, l =
-    encode_load curr_addr PrivateReg (ProgramAddress.to_uint16 ret_addr) R0
-  in
+  let acc = load_address acc PrivateReg ret_addr None in
   (* And push it to the stack *)
-  let na, l = add_instr (na, l) (PStore (SP, PrivateReg)) in
+  let acc = add_instr acc (PStore (SP, PrivateReg)) in
   (* Update the stack pointer *)
-  let na, l = add_instr (na, l) (PAdd (SP, SP, R1)) in
+  let acc = add_instr acc (PAdd (SP, SP, R1)) in
   (* We add the current FP to the stack *)
-  let na, l = add_instr (na, l) (PStore (SP, FP)) in
+  let acc = add_instr acc (PStore (SP, FP)) in
   (* Copy SP into FP *)
-  let na, l = add_instr (na, l) (PAdd (FP, SP, R0)) in
+  let acc = add_instr acc (PAdd (FP, SP, R0)) in
   (* Update the stack pointer *)
-  let na, l = add_instr (na, l) (PAdd (SP, SP, R1)) in
-  (na, l) *)
+  let acc = add_instr acc (PAdd (SP, SP, R1)) in
+  acc
 
 let localise_section labels_pos begin_addr sec =
   let incr_and_ret accc v =
@@ -144,15 +128,38 @@ let localise_section labels_pos begin_addr sec =
           (if not (ProgramAddress.well_defined (current_address acc) offset.v)
            then
              let txt =
-               Format.sprintf
-                 (* TODO : Improve error message *)
-                 "This instruction jumps to an implementation defined address."
+               Format.asprintf
+                 "The address to which the program jumps, calculated from the  \
+                  offset '%a' of the current address, is not well defined. In \
+                  fact, this address is outside the permitted range (from %a \
+                  to %a). The resulting address is implementation defined, \
+                  please fix this."
+                 Offset.pp offset.v ProgramAddress.pp ProgramAddress.first
+                 ProgramAddress.pp ProgramAddress.last
              in
              warning txt offset.pos);
           let acc, target_addr = jump_offset acc offset.v f in
-          (acc, ProgramAddress.Map.add target_addr offset.v a2c)
-      | TJmpImmediate _ -> assert false
-      | TCallAddr _ -> assert false
-      | TCallLabel _ -> assert false)
+          (acc, ProgramAddress.Map.add target_addr offset.pos a2c)
+      | TJmpImmediate (f, target_addr) ->
+          let offset =
+            ProgramAddress.diff (current_address acc) target_addr.v
+          in
+          let acc, _ = jump_offset acc offset f in
+          (acc, ProgramAddress.Map.add target_addr.v target_addr.pos a2c)
+      | TCallAddr reg ->
+          let acc = setup_stack acc 1 in
+          let acc = add_instr acc (PJmpAddr reg) in
+          (acc, a2c)
+      | TCallLabel _ -> (
+          (* let offset = ProgramAddress.diff (current_address acc) label in
+          match Offset.to_int24 with
+          | Some i ->
+              (* The jump will be a jumpi ! *)
+              let acc = setup_stack acc 1 in
+              let acc = add_instr acc (PJmpFutureOffset i) in
+              (acc, a2c)
+          | None -> *)
+              (* We need to load the address in rpriv to jump *)
+              assert false))
     ((begin_addr, Monoid.empty), ProgramAddress.Map.empty)
     sec.body
