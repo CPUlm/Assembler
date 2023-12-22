@@ -1,11 +1,10 @@
 open Integers
 open PositionUtils
 
-let _ =
-  if Sys.int_size < 33 then
-    failwith "The size of the integers available is not large enough."
-
 type immediate = Immediate.t pos
+(** A immediate with a position *)
+
+type program_address = ProgramAddress.t pos
 (** A immediate with a position *)
 
 type offset = Offset.t pos
@@ -14,8 +13,10 @@ type offset = Offset.t pos
 type label = string pos
 (** A string with a position *)
 
-(** Allowed Registers *)
-type reg =
+type reg = reg_kind pos
+(** Available Registers *)
+
+and reg_kind =
   | R0
   | R1
   | R2
@@ -119,22 +120,16 @@ and inst_kind =
   | Pop of reg (* Pseudo instr *)
   (* Memory operations *)
   | Load of reg * reg
-  | LoadImmediate of reg * immediate
-  | LoadImmediateLabel of reg * label
-  | LoadImmediateAdd of reg * immediate * reg
-  | LoadImmediateAddLabel of reg * label * reg
+  | LoadImmediateAdd of reg * immediate * reg option
+  | LoadImmediateAddLabel of reg * label * reg option
   | Store of reg * reg
   | Mov of reg * reg (* Pseudo instr *)
   (* Flow instructions *)
   | Test of reg (* Pseudo instr *)
-  | JmpLabel of label (* Pseudo instr *)
-  | JmpLabelCond of flag * label (* Pseudo instr *)
-  | JmpAddr of reg
-  | JmpAddrCond of flag * reg
-  | JmpOffset of offset
-  | JmpOffsetCond of flag * offset
-  | JmpImmediate of immediate
-  | JmpImmediateCond of flag * immediate
+  | JmpLabel of flag option * label (* Pseudo instr *)
+  | JmpAddr of flag option * reg
+  | JmpOffset of flag option * offset
+  | JmpImmediate of flag option * program_address
   | Halt
   (* Functions *)
   | CallLabel of label (* Pseudo instr *)

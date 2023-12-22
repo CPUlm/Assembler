@@ -1,88 +1,121 @@
+open Ast
 open TAst
 open PAst
+open ErrorUtils
+open PositionUtils
 open Integers
 
-let add_instr_p pos (addr, l) v =
-  (ProgramAddress.next addr pos (assert false), l @ [ (addr, v) ])
+let ill_defined_address _ _ = assert false
 
-let encode_load curr_addr pos instr r1 (i : UInt16.res) r2 =
+let next addr =
+  (* We can force because we have a majoration *)
+  Option.get (ProgramAddress.next addr)
+
+let add_instr (cur_addr, acc) v = (next cur_addr, Monoid.(acc @@ of_elm v))
+let reserve_address (cur_addr, acc) = (next cur_addr, acc)
+let current_address = fst
+
+(** Load the program label [label] plus the register [r2] to [r1].
+    [acc] is the current position in the section. *)
+let load_label (label_estim, label_positioned) acc r1 label r2 =
+  let r2 = match r2 with Some r -> r | None -> R0 in
+  let label_in_one_load =
+    match ProgramLabel.Map.find_opt label label_positioned with
+    | Some pos ->
+        (* The label occurs before our label so we have its final position !
+           We test if this address can be encoded in a uint16 to test if one
+           load if enougt *)
+        ProgramAddress.fit_in_uint16 pos 0
+    | None ->
+        (* The label occurs after our label, so we look at his position
+           estimation. Same as before *)
+        let estim_pos = ProgramLabel.Map.find label label_estim in
+        ProgramAddress.fit_in_uint16 estim_pos 0
+  in
+  let acc = add_instr acc (PLoadProgLabelAdd (r1, label, r2)) in
+  if label_in_one_load then acc else reserve_address acc
+
+(** Load the address [addr] in the register [r1]. If [r2] is not [None], it is
+    added to the result *)
+let load_address acc r1 addr r2 =
+  let r2 = match r2 with Some r -> r | None -> R0 in
+  match ProgramAddress.to_uint16 addr with
+  | Single imm -> add_instr acc (PLoadImmediateAdd (r1, imm, LowHalf, r2))
+  | Multiple imms ->
+      let acc = add_instr acc (PLoadImmediateAdd (r1, imms.low, LowHalf, r2)) in
+      add_instr acc (PLoadImmediateAdd (r1, imms.high, HighHalf, r1))
+
+(** Jump to the offset [ofs]. Jump is performed every time if [f] is [None]
+    Otherwise, [f] is the flag used to known if we jump. *)
+let jump_offset acc ofs f =
+  (* This is the absolute address we will jump at *)
+  let target_addr = ProgramAddress.with_offset (current_address acc) ofs in
+  match Offset.to_int24 ofs with
+  | Some ofs -> (
+      (* We can use the jmpi instruction directly :)
+         No need to used the absolute address. *)
+      match f with
+      | None -> (add_instr acc (PJmpImmediate ofs), target_addr)
+      | Some f -> (add_instr acc (PJmpImmediateCond (f, ofs)), target_addr))
+  | None ->
+      (* We can't use jmpi :/ *)
+      (* We load the target_address into rpriv *)
+      let acc = load_address acc PrivateReg target_addr None in
+      (* And jump to rpriv *)
+      (add_instr acc (PJmpAddr PrivateReg), target_addr)
+
+(*
+let encode_load accc r1 (i : UInt16.res) r2 =
+  let curr_addr, acc, _ = accc in
   match i with
   | Single imm ->
-      let p1 = curr_addr in
-      let l = [ (p1, PLoadImmediateAdd (r1, imm, LowHalf, r2)) ] in
-      let next_addr = ProgramAddress.next p1 pos instr in
-      (next_addr, l)
+      add_instr (curr_addr, acc) (PLoadImmediateAdd (r1, imm, LowHalf, r2))
   | Multiple imms ->
-      let p1 = curr_addr in
-      let p2 = ProgramAddress.next p1 pos instr in
-      let l =
-        [
-          (p1, PLoadImmediateAdd (r1, imms.low, LowHalf, r2));
-          (p2, PLoadImmediateAdd (r1, imms.high, HighHalf, r1));
-        ]
+      let na, l =
+        add_instr (curr_addr, acc)
+          (PLoadImmediateAdd (r1, imms.low, LowHalf, r2))
       in
-      let next_addr = ProgramAddress.next p2 pos instr in
-      (next_addr, l)
-
-let compile_jump accc pos instr target_addr =
-  let curr_addr, acc, a2c = accc in
-  let next_addr, l =
-    encode_load curr_addr pos instr PrivateReg
-      (ProgramAddress.to_uint16 target_addr)
-      R0
-  in
-  let l = l @ [ (next_addr, PJmpAddr PrivateReg) ] in
-  let next_addr = ProgramAddress.next next_addr pos in
-  (next_addr, acc @ l, ProgramAddress.Map.add target_addr instr.pos a2c)
-
-let compile_jump_cond accc pos instr f target_addr =
-  let curr_addr, acc, a2c = accc in
-  let next_addr, l =
-    encode_load curr_addr pos instr PrivateReg
-      (ProgramAddress.to_uint16 target_addr)
-      R0
-  in
-  let l = l @ [ (next_addr, PJmpAddrCond (f, PrivateReg)) ] in
-  let next_addr = ProgramAddress.next next_addr pos in
-  (next_addr, acc @ l, ProgramAddress.Map.add target_addr instr.pos a2c)
-
-let setup_stack curr_addr pos (instr : tinstr) nb_op =
+      add_instr (na, l) (PLoadImmediateAdd (r1, imms.high, HighHalf, r1))
+*)
+(*
+let setup_stack curr_addr nb_op =
   let ret_addr =
-    let ofs = nb_op + 5 (* nb of op without load to setup the stack *) in
-    (* let ofs =
-         if ProgramAddress.fit_16bit curr_addr (ofs, instr.pos) then
-           ofs + 1 (* only one load needed *)
-         else ofs + 2 (* two load here *)
-       in *)
-    ProgramAddress.with_offset curr_addr (ofs, instr.pos)
+    let ofs =
+      (* nb of op needed to setup the stack without the load of the return address *)
+      nb_op + 5
+    in
+    let ofs =
+      if ProgramAddress.fit_in_uint16 curr_addr ofs then
+        (* only one load needed for the return address *)
+        ofs + 1
+      else (* two load needed for the return address *) ofs + 2
+    in
+    ProgramAddress.unsafe_with_offset curr_addr ofs
   in
   (* We load [ret_addr] into [PrivateReg] *)
   let na, l =
-    encode_load curr_addr pos instr PrivateReg
-      (ProgramAddress.to_uint16 ret_addr)
-      R0
+    encode_load curr_addr PrivateReg (ProgramAddress.to_uint16 ret_addr) R0
   in
   (* And push it to the stack *)
-  let na, l = add_instr_p pos (na, l) (PStore (SP, PrivateReg)) in
+  let na, l = add_instr (na, l) (PStore (SP, PrivateReg)) in
   (* Update the stack pointer *)
-  let na, l = add_instr_p pos (na, l) (PAdd (SP, SP, R1)) in
+  let na, l = add_instr (na, l) (PAdd (SP, SP, R1)) in
   (* We add the current FP to the stack *)
-  let na, l = add_instr_p pos (na, l) (PStore (SP, FP)) in
+  let na, l = add_instr (na, l) (PStore (SP, FP)) in
   (* Copy SP into FP *)
-  let na, l = add_instr_p pos (na, l) (PAdd (FP, SP, R0)) in
+  let na, l = add_instr (na, l) (PAdd (FP, SP, R0)) in
   (* Update the stack pointer *)
-  let na, l = add_instr_p pos (na, l) (PAdd (SP, SP, R1)) in
-  (na, l)
+  let na, l = add_instr (na, l) (PAdd (SP, SP, R1)) in
+  (na, l) *)
 
-let localise_section begin_addr instrs pos =
-  let add_instr = add_instr_p pos in
+let localise_section labels_pos begin_addr sec =
   let incr_and_ret accc v =
-    let curr_addr, acc, a2c = accc in
-    let na, l = add_instr (curr_addr, acc) v in
-    (na, l, a2c)
+    let acc, a2c = accc in
+    let acc = add_instr acc v in
+    (acc, a2c)
   in
-  Monoid.fold
-    (fun ((curr_addr, acc, a2c) as accc) (instr : tinstr) ->
+  Monoid.fold_left
+    (fun ((acc, a2c) as accc) instr ->
       match instr.v with
       | TAnd (r1, r2, r3) -> incr_and_ret accc (PAnd (r1, r2, r3))
       | TOr (r1, r2, r3) -> incr_and_ret accc (POr (r1, r2, r3))
@@ -102,46 +135,24 @@ let localise_section begin_addr instrs pos =
       | TLoadImmediateAdd (r1, imm, mode, r2) ->
           incr_and_ret accc (PLoadImmediateAdd (r1, imm, mode, r2))
       | TLoadProgLabelAdd (r1, prg_lbl, r2) ->
-          let na, l =
-            add_instr (curr_addr, acc) (PLoadProgLabelAdd (r1, prg_lbl, r2))
-          in
-          (* We reserve one operation for the load *)
-          let na = ProgramAddress.next na pos instr in
-          (na, l, a2c)
+          let acc = load_label labels_pos acc r1 prg_lbl r2 in
+          (acc, a2c)
       | TStore (r1, r2) -> incr_and_ret accc (PStore (r1, r2))
-      | TJmpAddr r1 -> incr_and_ret accc (PJmpAddr r1)
-      | TJmpAddrCond (f, r1) -> incr_and_ret accc (PJmpAddrCond (f, r1))
-      | TJmpOffset offset ->
-          let target_addr = ProgramAddress.with_offset curr_addr offset in
-          (* compile_jump accc pos instr target_addr *)
-          ignore target_addr;
-          assert false
-      | TJmpOffsetCond (f, offset) ->
-          let target_addr = ProgramAddress.with_offset curr_addr offset in
-          (* compile_jump_cond accc pos (assert false) f target_addr (assert false) *)
-          ignore (f, target_addr);
-          assert false
-      | TJmpImmediate target_addr ->
-          ignore target_addr;
-          assert false (* compile_jump accc pos target_addr (assert false) *)
-      | TJmpImmediateCond (f, target_addr) ->
-          ignore (f, target_addr);
-          assert false
-          (* compile_jump_cond accc pos f target_addr (assert false) *)
-      | TCallAddr r ->
-          let na, l = setup_stack curr_addr pos instr 1 in
-          let na, l = add_instr (na, l) (PJmpAddr r) in
-          (na, l, a2c)
-      | TCallLabel lbl ->
-          let na, l = setup_stack curr_addr pos instr 3 in
-          (* We load the value of the label in memory : 2 operations *)
-          let na, l =
-            add_instr (na, l) (PLoadProgLabelAdd (PrivateReg, lbl, R0))
-          in
-          (* We reserve one operation for the load *)
-          let na = ProgramAddress.next na pos instr in
-          (* And now, we (finally) jump ! *)
-          let na, l = add_instr (na, l) (PJmpAddr PrivateReg) in
-          (na, l, a2c))
-    (begin_addr, [], ProgramAddress.Map.empty)
-    instrs
+      | TJmpAddr (None, r1) -> incr_and_ret accc (PJmpAddr r1)
+      | TJmpAddr (Some f, r1) -> incr_and_ret accc (PJmpAddrCond (f, r1))
+      | TJmpOffset (f, offset) ->
+          (if not (ProgramAddress.well_defined (current_address acc) offset.v)
+           then
+             let txt =
+               Format.sprintf
+                 (* TODO : Improve error message *)
+                 "This instruction jumps to an implementation defined address."
+             in
+             warning txt offset.pos);
+          let acc, target_addr = jump_offset acc offset.v f in
+          (acc, ProgramAddress.Map.add target_addr offset.v a2c)
+      | TJmpImmediate _ -> assert false
+      | TCallAddr _ -> assert false
+      | TCallLabel _ -> assert false)
+    ((begin_addr, Monoid.empty), ProgramAddress.Map.empty)
+    sec.body

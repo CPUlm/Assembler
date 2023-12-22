@@ -5,8 +5,9 @@ open Integers
 module type Id = sig
   type t
 
-  val fresh : string option -> t
+  val fresh : string option -> position -> t
   val name : t -> string option
+  val position : t -> position
 
   module Map : Map.S with type key = t
   module Set : Set.S with type elt = t
@@ -18,20 +19,21 @@ end
 (** A module to manipulate named unique ids. *)
 module ProgramLabel : Id = struct
   module CMP = struct
-    type t = int * string option
+    type t = int * string option * position
 
-    let compare (x : t) (y : t) = Stdlib.compare (fst x) (fst y)
+    let compare ((x, _, _) : t) ((y, _, _) : t) = Stdlib.compare x y
   end
 
   type t = CMP.t
 
   let fresh =
     let cpt = ref 0 in
-    fun f ->
+    fun f pos ->
       incr cpt;
-      (!cpt, f)
+      (!cpt, f, pos)
 
-  let name = snd
+  let name (_, name, _) = name
+  let position (_, _, pos) = pos
 
   module Map = Map.Make (CMP)
   module Set = Set.Make (CMP)
@@ -40,11 +42,10 @@ module ProgramLabel : Id = struct
   type set = Set.t
 end
 
-module ProgramAddress : Address = Address
-module MemoryAddress : Address = Address
-
 (** The mode of the load *)
 type load_mode = HighHalf | LowHalf
+
+type reg = Ast.reg_kind
 
 type tinstr = tinstr_kind pos
 (** Type of a typed instruction, with its position in the source file. *)
@@ -67,15 +68,12 @@ and tinstr_kind =
   (* Memory operations *)
   | TLoad of reg * reg
   | TLoadImmediateAdd of reg * UInt16.t * load_mode * reg
-  | TLoadProgLabelAdd of reg * ProgramLabel.t * reg
+  | TLoadProgLabelAdd of reg * ProgramLabel.t * reg option
   | TStore of reg * reg
   (* Flow instructions *)
-  | TJmpAddr of reg
-  | TJmpAddrCond of flag * reg
-  | TJmpOffset of offset
-  | TJmpOffsetCond of flag * offset
-  | TJmpImmediate of immediate
-  | TJmpImmediateCond of flag * immediate
+  | TJmpAddr of flag option * reg
+  | TJmpOffset of flag option * offset
+  | TJmpImmediate of flag option * ProgramAddress.t pos
   (* Function Call *)
   | TCallAddr of reg
   | TCallLabel of ProgramLabel.t

@@ -33,15 +33,23 @@
 %%
 
 %inline reg:
-  | ROUT  { ROut }
-  | SP    { SP }
-  | FP    { FP }
-  | RPRIV { PrivateReg }
+  | ROUT  { mk_pos $loc ROut }
+  | SP    { mk_pos $loc SP }
+  | FP    { mk_pos $loc FP }
+  | RPRIV { mk_pos $loc PrivateReg }
   | r=R   { int_to_reg $loc r }
 
-%inline imm: i=IMM   { mk_imm $loc i }
-%inline lbl: l=LBL   { mk_pos $loc l }
-%inline offs: o=OFFS { mk_offset $loc o }
+%inline imm:
+  i=IMM   { mk_imm $loc i }
+
+%inline prog_addr:
+  i=IMM   { mk_prog_addr $loc i }
+
+%inline lbl:
+  l=LBL   { mk_pos $loc l }
+
+%inline offs:
+  o=OFFS { mk_offset $loc o }
 
 inst_without_label:
   | AND r1=reg r2=reg r3=reg   { mk_pos $loc (And (r1, r2, r3)) }
@@ -63,21 +71,21 @@ inst_without_label:
   | PUSH r=reg                 { mk_pos $loc (Push r) }
   | POP r=reg                  { mk_pos $loc (Pop r) }
   | LOAD r1=reg r2=reg         { mk_pos $loc (Load (r1, r2)) }
-  | LOADI r1=reg i=imm         { mk_pos $loc (LoadImmediate (r1, i)) }
-  | LOADI r1=reg l=lbl         { mk_pos $loc (LoadImmediateLabel (r1, l)) }
-  | LOADI r1=reg i=imm r2=reg  { mk_pos $loc (LoadImmediateAdd (r1, i, r2)) }
-  | LOADI r1=reg l=lbl r2=reg  { mk_pos $loc (LoadImmediateAddLabel (r1, l, r2)) }
+  | LOADI r1=reg i=imm         { mk_pos $loc (LoadImmediateAdd (r1, i, None)) }
+  | LOADI r1=reg l=lbl         { mk_pos $loc (LoadImmediateAddLabel (r1, l, None)) }
+  | LOADI r1=reg i=imm r2=reg  { mk_pos $loc (LoadImmediateAdd (r1, i, Some r2)) }
+  | LOADI r1=reg l=lbl r2=reg  { mk_pos $loc (LoadImmediateAddLabel (r1, l, Some r2)) }
   | STORE r1=reg r2=reg        { mk_pos $loc (Store (r1, r2)) }
   | MOV r1=reg r2=reg          { mk_pos $loc (Mov (r1, r2)) }
   | TEST r=reg                 { mk_pos $loc (Test r) }
-  | JMP i=imm                  { mk_pos $loc (JmpImmediate i) }
-  | JMP o=offs                 { mk_pos $loc (JmpOffset o) }
-  | JMP l=lbl                  { mk_pos $loc (JmpLabel l) }
-  | JMP r=reg                  { mk_pos $loc (JmpAddr r) }
-  | f=JMPC i=imm               { mk_pos $loc (JmpImmediateCond (f, i)) }
-  | f=JMPC o=offs              { mk_pos $loc (JmpOffsetCond (f, o)) }
-  | f=JMPC l=lbl               { mk_pos $loc (JmpLabelCond (f, l)) }
-  | f=JMPC r=reg               { mk_pos $loc (JmpAddrCond (f, r)) }
+  | JMP i=prog_addr            { mk_pos $loc (JmpImmediate (None, i)) }
+  | JMP o=offs                 { mk_pos $loc (JmpOffset (None, o)) }
+  | JMP l=lbl                  { mk_pos $loc (JmpLabel (None, l)) }
+  | JMP r=reg                  { mk_pos $loc (JmpAddr (None, r)) }
+  | f=JMPC i=prog_addr         { mk_pos $loc (JmpImmediate (Some f, i)) }
+  | f=JMPC o=offs              { mk_pos $loc (JmpOffset (Some f, o)) }
+  | f=JMPC l=lbl               { mk_pos $loc (JmpLabel (Some f, l)) }
+  | f=JMPC r=reg               { mk_pos $loc (JmpAddr (Some f, r)) }
   | HALT                       { mk_pos $loc Halt }
   | CALL r=reg                 { mk_pos $loc (CallAddr r) }
   | CALL l=lbl                 { mk_pos $loc (CallLabel l) }

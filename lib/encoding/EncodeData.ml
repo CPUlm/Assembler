@@ -143,7 +143,7 @@ let encode_data (f : file) =
         let mapping = SMap.add sec_name (cur_pos, pos) mapping in
         let cur_pos = add_section cur_pos sec_name sec_size pos in
         (cur_pos, Monoid.(data @@ sec_bytes), mapping))
-      (MemoryAddress.zero, Monoid.empty, SMap.empty)
+      (MemoryAddress.first, Monoid.empty, SMap.empty)
       data_decls
   in
   let data_bytes =

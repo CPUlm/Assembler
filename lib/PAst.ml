@@ -28,7 +28,5 @@ type pos_instr =
   | PJmpLabelCond of flag * ProgramLabel.t
   | PJmpAddr of reg
   | PJmpAddrCond of flag * reg
-  | PJmpOffset of int
-  | PJmpOffsetCond of flag * int
-  | PJmpImmediate of ProgramAddress.t
-  | PJmpImmediateCond of flag * ProgramAddress.t
+  | PJmpImmediate of Int24.t
+  | PJmpImmediateCond of flag * Int24.t
