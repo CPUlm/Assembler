@@ -1,0 +1,7 @@
+.text
+
+.macro MY_CONSTANT 54 .endmacro
+
+main:
+    loadi rout MY_CONSTANT
+    halt

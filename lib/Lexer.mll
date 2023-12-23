@@ -65,7 +65,9 @@ let resolve_directive =
           (".zstring", ZSTRING);
           (".uint", UINT);
           (".int", INT);
-          (".include",INCLUDE)
+          (".include", INCLUDE);
+          (".macro", MACRO);
+          (".endmacro", ENDMACRO);
         ]
         );
   fun s -> try Hashtbl.find directives s with Not_found -> raise (Lexing_error ("Unknown directive " ^ s))
@@ -167,34 +169,33 @@ and line_comment = parse
     { line_comment lexbuf }
 
 and string_lex = parse
-    | '"'
-      {
-        let s = Buffer.contents string_buffer in
-        Buffer.reset string_buffer;
-        STR s
-      }
+  | '"'
+    {
+      let s = Buffer.contents string_buffer in
+      Buffer.reset string_buffer;
+      STR s
+    }
 
-    | "\\\""
-      { Buffer.add_char string_buffer '"'; string_lex lexbuf }
+  | "\\\""
+    { Buffer.add_char string_buffer '"'; string_lex lexbuf }
 
-    | "\\\\"
-      { Buffer.add_char string_buffer '\\'; string_lex lexbuf }
+  | "\\\\"
+    { Buffer.add_char string_buffer '\\'; string_lex lexbuf }
 
-    | "\\0"
-      { Buffer.add_char string_buffer '\x00'; string_lex lexbuf }
+  | "\\0"
+    { Buffer.add_char string_buffer '\x00'; string_lex lexbuf }
 
-    | "\\" _ as e
-      { raise (Lexing_error ("Invalid escape sequence '" ^ e ^ "' in string.")) }
+  | "\\" _ as e
+    { raise (Lexing_error ("Invalid escape sequence '" ^ e ^ "' in string.")) }
 
-    | "\n" | eof
-      { raise (Lexing_error "Unterminated string.") }
+  | "\n" | eof
+    { raise (Lexing_error "Unterminated string.") }
 
-    | [^'\x20'-'\x7E'] as c
-      {
-        let msg = Format.sprintf "Non printable character '\\x%x' in string." (Char.code c) in
-        raise (Lexing_error msg)
-      }
+  | [^'\x20'-'\x7E'] as c
+    {
+      let msg = Format.sprintf "Non printable character '\\x%x' in string." (Char.code c) in
+      raise (Lexing_error msg)
+    }
 
-    | _ as c
-      { Buffer.add_char string_buffer c; string_lex lexbuf }
-
+  | _ as c
+    { Buffer.add_char string_buffer c; string_lex lexbuf }

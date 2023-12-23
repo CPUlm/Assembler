@@ -1,0 +1,4 @@
+.include "THIS FILE DOES NOT EXIST"
+
+.text
+main: nop

@@ -21,7 +21,7 @@
 %token <Ast.flag> JMPC
 
 (* Directives *)
-%token DATA TEXT STRING ZSTRING UINT INT INCLUDE
+%token DATA TEXT STRING ZSTRING UINT INT INCLUDE MACRO ENDMACRO
 
 (* Registers *)
 %token <int> R
