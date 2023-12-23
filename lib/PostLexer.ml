@@ -1,5 +1,8 @@
 open Parser
 
+let resolve_include_fname fname current_filename =
+  (Filename.dirname current_filename) ^ "/" ^ fname
+
 let tokens_until_endmacro lb token_queue =
   let tokens = Queue.create () in
   let rec loop lb tokens =
@@ -32,10 +35,13 @@ let rec next_token =
       lex_token_if_not_empty lb tokens;
       match Queue.pop tokens with 
       | STR fname -> (
-        let f = try open_in fname 
+        let current_filename = (Lexing.lexeme_start_p lb).pos_fname in
+        let resolved_fname = resolve_include_fname fname current_filename in
+        let f = try open_in resolved_fname
         with _ -> (raise (Lexer.Lexing_error ("Failed to open file '" ^ fname ^ "'.")))
         in
         let f_lb = Lexing.from_channel f in
+        Lexing.set_filename f_lb fname;
         let rec lex_tokens acc =
           (
           match next_token f_lb with
