@@ -15,7 +15,7 @@ max=0
 echo -e "\033[32m[----------] lexer\033[0m"
 for f in test/lexer/*.ulm; do
     max=`expr $max + 1`;
-    $compilo --dump-tokens $f | diff - "${f%.ulm}.out";
+    $compilo --lex-only $f | diff - "${f%.ulm}.out";
     case $? in
       "1")
       echo -e "\033[31m[  FAILED  ]\033[0m "$f" (tokens mismatch)";;

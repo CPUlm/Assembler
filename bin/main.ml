@@ -1,11 +1,13 @@
 open LibUlmAssembly
 
 let usage = "usage: asm [options] file.ulm"
+let lex_only = ref false
 let parse_only = ref false
 
 let spec =
   Arg.align
     [
+      ("--lex-only", Arg.Set lex_only, "  dump all lexed tokens and stop after lexing");
       ("--parse-only", Arg.Set parse_only, "  stop after parsing");
       ( "--fatal-warnings",
         Arg.Set ErrorUtils.fatal_warnings,
@@ -35,10 +37,13 @@ let lexbuf =
 
 let () =
   try
-    let file = Parser.file (PostLexer.next_token) lexbuf in
-    let data_section = EncodeData.encode_data file in
-    let checked_ast = ProcessInstruction.pre_encode_instr data_section file in
-    ignore checked_ast
+    if !lex_only then
+      DumpToken.dump_tokens lexbuf
+    else
+      let file = Parser.file (PostLexer.next_token) lexbuf in
+      let data_section = EncodeData.encode_data file in
+      let checked_ast = ProcessInstruction.pre_encode_instr data_section file in
+      ignore checked_ast
   with
   | Lexer.Lexing_error msg ->
       let s = Lexing.lexeme_start_p lexbuf in
