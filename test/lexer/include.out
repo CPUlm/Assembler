@@ -1,0 +1,5 @@
+TEXT
+IDENT main
+COLON
+NOP
+EOF
