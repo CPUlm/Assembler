@@ -32,19 +32,21 @@ let rec next_token =
       lex_token_if_not_empty lb tokens;
       match Queue.pop tokens with 
       | STR fname -> (
-          let f = open_in fname in
-          let f_lb = Lexing.from_channel f in
-          let rec lex_tokens acc =
-            (
-            match next_token f_lb with
-            | EOF -> List.rev acc
-            | tokens -> lex_tokens ([tokens] @ acc)
-            )
-          in
-          let r = lex_tokens [] in 
-          let _ = close_in f in
-          List.iter (fun x -> Queue.add x tokens ) r;
-          Queue.pop tokens
+        let f = try open_in fname 
+        with _ -> (raise (Lexer.Lexing_error ("Failed to open file '" ^ fname ^ "'.")))
+        in
+        let f_lb = Lexing.from_channel f in
+        let rec lex_tokens acc =
+          (
+          match next_token f_lb with
+          | EOF -> List.rev acc
+          | tokens -> lex_tokens ([tokens] @ acc)
+          )
+        in
+        let r = lex_tokens [] in 
+        let _ = close_in f in
+        List.iter (fun x -> Queue.add x tokens ) r;
+        Queue.pop tokens
       )
       | _ -> raise (Lexer.Lexing_error "Using include without a string (a string should be surrounded by \"\") after it.")
     )
