@@ -61,10 +61,10 @@ let load_label labels_pos acc r1 label r2 =
 let load_address acc r1 addr r2 =
   let r2 = match r2 with Some r -> r | None -> R0 in
   match ProgramAddress.to_uint16 addr with
-  | Single imm -> add_instr acc (LoadImmediateAdd (r1, imm, LowHalf, r2))
+  | Single imm -> add_instr acc (LoadImmediateAdd (r1, r2, imm, LowHalf))
   | Multiple imms ->
-      let acc = add_instr acc (LoadImmediateAdd (r1, imms.low, LowHalf, r2)) in
-      add_instr acc (LoadImmediateAdd (r1, imms.high, HighHalf, r1))
+      let acc = add_instr acc (LoadImmediateAdd (r1, r2, imms.low, LowHalf)) in
+      add_instr acc (LoadImmediateAdd (r1, r1, imms.high, HighHalf))
 
 (** Jump to the offset [ofs]. Jump is performed every time if [f] is [None]
     Otherwise, [f] is the flag used to known if we jump. *)
@@ -77,7 +77,7 @@ let jump_offset acc ofs f =
          No need to used the absolute address. *)
       match f with
       | None -> (add_instr acc (JmpImmediate ofs), target_addr)
-      | Some f -> (add_instr acc (JmpImmediateCond (f, ofs)), target_addr))
+      | Some f -> (add_instr acc (JmpImmediateCond (ofs, f)), target_addr))
   | None ->
       (* We can't use jmpi :/ *)
       (* We load the target_address into rpriv *)
@@ -156,7 +156,7 @@ let jump_label acc label f jump_kind =
   | Some i -> (
       let acc = add_future acc i (FuturePLabelLoad (PrivateReg, label, R0)) in
       match f with
-      | Some f -> add_instr acc (JmpCond (f, PrivateReg))
+      | Some f -> add_instr acc (JmpCond (PrivateReg, f))
       | None -> add_instr acc (Jmp PrivateReg))
 
 let position_section labels_pos begin_addr sec =
@@ -185,7 +185,7 @@ let position_section labels_pos begin_addr sec =
             incr_and_ret accc (ShiftRightLogical (r1, r2, r3))
         | TLoad (r1, r2) -> incr_and_ret accc (Load (r1, r2))
         | TLoadImmediateAdd (r1, imm, mode, r2) ->
-            incr_and_ret accc (LoadImmediateAdd (r1, imm, mode, r2))
+            incr_and_ret accc (LoadImmediateAdd (r1, r2, imm, mode))
         | TLoadProgLabelAdd (r1, prg_lbl, r2) ->
             let acc = load_label labels_pos acc r1 prg_lbl r2 in
             (acc, a2c)
@@ -195,7 +195,7 @@ let position_section labels_pos begin_addr sec =
             let acc = jump_label acc label f jump_kind in
             (acc, a2c)
         | TJmpAddr (None, r1) -> incr_and_ret accc (Jmp r1)
-        | TJmpAddr (Some f, r1) -> incr_and_ret accc (JmpCond (f, r1))
+        | TJmpAddr (Some f, r1) -> incr_and_ret accc (JmpCond (r1, f))
         | TJmpOffset (f, offset) ->
             (if not (ProgramAddress.well_defined (current_address acc) offset.v)
              then
@@ -237,7 +237,7 @@ let position_section labels_pos begin_addr sec =
   (next_addr, instrs, addr2check)
 
 let position_instrs estim_labels prog =
-  let a2c, prog_label_position, next_addr, prog_pinstrs =
+  let a2c, pprog_label_position, next_addr, pprog_instrs =
     Monoid.fold_left
       (fun (a2c, label_map, curr_addr, p_instrs) sec ->
         let next_addr, instrs, addr2check =
@@ -267,7 +267,7 @@ let position_instrs estim_labels prog =
         warning txt pos)
     a2c;
   {
-    prog_pinstrs;
-    prog_label_mapping = prog.prog_label_mapping;
-    prog_label_position;
+    pprog_instrs;
+    pprog_label_mapping = prog.prog_label_mapping;
+    pprog_label_position;
   }

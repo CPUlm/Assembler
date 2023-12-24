@@ -31,22 +31,19 @@ let rec fold_right f m acc =
       let right_acc = fold_right f right acc in
       fold_right f left right_acc
 
-let wrap_f f x =
-  match f x with Either.Left x -> LeafElm x | Either.Right l -> LeafL l
-
 let rec map f = function
   | Empty -> Empty
-  | LeafElm x -> wrap_f f x
-  | LeafL l -> List.fold_left (fun acc x -> Concat (acc, wrap_f f x)) Empty l
+  | LeafElm x -> f x
+  | LeafL l -> List.fold_left (fun acc x -> Concat (acc, f x)) Empty l
   | Concat (left, right) -> Concat (map f left, map f right)
 
 let rec mapi index f m =
   match m with
   | Empty -> (Empty, index)
-  | LeafElm x -> (wrap_f (f index) x, index + 1)
+  | LeafElm x -> ((f index) x, index + 1)
   | LeafL l ->
       List.fold_left
-        (fun (acc, index) x -> (Concat (acc, wrap_f (f index) x), index + 1))
+        (fun (acc, index) x -> (Concat (acc, (f index) x), index + 1))
         (Empty, index) l
   | Concat (left, right) ->
       let left_part, index = mapi index f left in

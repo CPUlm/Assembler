@@ -25,36 +25,57 @@ module StyleSet = Set.Make (struct
   let compare = Stdlib.compare
 end)
 
-(** [int_of_color c] : Convert the color [c] to its corresponding value.*)
-let int_of_color = function
-  | Black -> 0l
-  | Red -> 1l
-  | Green -> 2l
-  | Yellow -> 3l
-  | Blue -> 4l
-  | Magenta -> 5l
-  | Cyan -> 6l
-  | White -> 7l
-  | BrightBlack -> 8l
-  | BrightRed -> 9l
-  | BrightGreen -> 10l
-  | BrightYellow -> 11l
-  | BrightBlue -> 12l
-  | BrightMagenta -> 13l
-  | BrightCyan -> 14l
-  | BrightWhite -> 15l
+(** Encode a character *)
+let encode_char (pos, v) chr =
+  let char_size = 8 in
+  let c = Char.code chr in
+  (pos + char_size, Word.add_at v (Int32.of_int c) pos)
 
-(** [int_of_style s] : Convert the style [s] to its corresponding value.*)
-let int_of_style = function
-  | Bold -> Int32.shift_left 1l 0
-  | Faint -> Int32.shift_left 1l 1
-  | Italic -> Int32.shift_left 1l 2
-  | Underline -> Int32.shift_left 1l 3
-  | Blinking -> Int32.shift_left 1l 4
-  | Hide -> Int32.shift_left 1l 5
-  | Crossed -> Int32.shift_left 1l 6
-  | Overline -> Int32.shift_left 1l 7
-  | Default -> 0l
+(** Encode a color *)
+let encode_color (pos, v) col =
+  let color_size = 4 in
+  let c =
+    match col with
+    | Black -> 0
+    | Red -> 1
+    | Green -> 2
+    | Yellow -> 3
+    | Blue -> 4
+    | Magenta -> 5
+    | Cyan -> 6
+    | White -> 7
+    | BrightBlack -> 8
+    | BrightRed -> 9
+    | BrightGreen -> 10
+    | BrightYellow -> 11
+    | BrightBlue -> 12
+    | BrightMagenta -> 13
+    | BrightCyan -> 14
+    | BrightWhite -> 15
+  in
+  (pos + color_size, Word.add_at v (Int32.of_int c) pos)
+
+(** Encode a style set *)
+let encode_style (pos, v) style =
+  let style_size = 4 in
+  let c =
+    StyleSet.fold
+      (fun style_piece acc ->
+        match style_piece with
+        | Bold -> Int32.(logor acc (shift_left one 0))
+        | Faint -> Int32.(logor acc (shift_left one 1))
+        | Italic -> Int32.(logor acc (shift_left one 2))
+        | Underline -> Int32.(logor acc (shift_left one 3))
+        | Blinking -> Int32.(logor acc (shift_left one 4))
+        | Hide -> Int32.(logor acc (shift_left one 5))
+        | Crossed -> Int32.(logor acc (shift_left one 6))
+        | Overline -> Int32.(logor acc (shift_left one 7))
+        | Default -> 0l)
+      style 0l
+  in
+  (pos + style_size, Word.add_at v c pos)
+
+let get_code = snd
 
 (** [of_text s] : Encode [s] with the encoding scheme.*)
 let of_text t =
@@ -63,44 +84,30 @@ let of_text t =
     | Concat (left, right) ->
         let left_size, left_str = of_text tc bc sts left in
         let right_size, right_str = of_text tc bc sts right in
-        ( left_size + right_size,
-          Bytes.concat Bytes.empty [ left_str; right_str ] )
+        (left_size + right_size, Monoid.(left_str @@ right_str))
     | TextColor (tc, t) -> of_text tc bc sts t
     | BackColor (bc, t) -> of_text tc bc sts t
     | Style (Default, t) -> of_text tc bc StyleSet.empty t
     | Style (st, t) -> of_text tc bc (StyleSet.add st sts) t
     | Text txt ->
+        let code = (0, Word.zero) in
         let text_size, text_bytes =
-          String.fold_right
-            (fun chr (size, acc) ->
+          String.fold_left
+            (fun (size, acc) chr ->
               (* Compute the ASCII Code of chr *)
-              let v = Int32.of_int (Char.code chr) in
+              let code = encode_char code chr in
               (* Add the text color *)
-              let v =
-                let tcol = int_of_color tc in
-                Int32.logor v (Int32.shift_left tcol 8)
-              in
+              let code = encode_color code tc in
               (* Add the background color *)
-              let v =
-                let tcol = int_of_color bc in
-                Int32.logor v (Int32.shift_left tcol 12)
-              in
+              let code = encode_color code bc in
               (* Add the text style *)
-              let v =
-                let int_style =
-                  StyleSet.fold
-                    (fun s acc -> Int32.logor (int_of_style s) acc)
-                    sts 0l
-                in
-                Int32.logor v (Int32.shift_left int_style 16)
-              in
-              (* Pack everything in bytes *)
-              let b = Bytes.create 4 in
-              Bytes.set_int32_le b 0 v;
-              (size + 1, b :: acc))
-            txt (0, [])
+              let code = encode_style code sts in
+              (* Get the word *)
+              let word = get_code code in
+              (size + 1, Monoid.(acc @@ of_elm word)))
+            (0, Monoid.empty) txt
         in
-        (text_size, Bytes.concat Bytes.empty text_bytes)
+        (text_size, text_bytes)
   in
   of_text default_text_color default_background_color StyleSet.empty t
 
@@ -114,7 +121,7 @@ let encode_section sec =
     Monoid.fold_left
       (fun (cur_pos, data) i ->
         match process_data i with
-        | TString (size, str) -> (cur_pos + size, Monoid.(data @@ of_elm str))
+        | TString (size, str) -> (cur_pos + size, Monoid.(data @@ str))
         | TInt imm ->
             let b = Immediate.to_word imm in
             (cur_pos + 1, Monoid.(data @@ of_elm b)))

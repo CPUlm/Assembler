@@ -21,11 +21,11 @@ val fold_left : ('acc -> 'a -> 'acc) -> 'acc -> 'a t -> 'acc
 val fold_right : ('a -> 'acc -> 'acc) -> 'a t -> 'acc -> 'acc
 (** [fold_right f {a1; ...; an} init] is [{f a1 (f a2 (... (f an init) ...))}]. *)
 
-val map : ('a -> ('b, 'b list) Either.t) -> 'a t -> 'b t
+val map : ('a -> 'b t) -> 'a t -> 'b t
 (** [map f {a1; ...; an}] applies function [f] to the monoid [{a1, ..., an}],
    and builds the monoid [{f a1; ...; f an}] with the results returned by [f]. *)
 
-val mapi : (int -> 'a -> ('b, 'b list) Either.t) -> 'a t -> 'b t
+val mapi : (int -> 'a -> 'b t) -> 'a t -> 'b t
 (** Same as [map], but the function is applied to the index of
    the element as first argument (counting from 0), and the element
    itself as second argument. *)

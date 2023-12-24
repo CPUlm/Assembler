@@ -24,6 +24,26 @@ let is_int32 =
 
 let is_uint32 i = 0 <= i && i <= last_address
 
+module type Word = sig
+  type t
+
+  val zero : t
+  val add_at : t -> int32 -> int -> t
+  val to_bytes : t -> bytes
+end
+
+module Word = struct
+  type t = int32
+
+  let zero = 0l
+  let add_at v c pos = Int32.(logor v (shift_left c pos))
+
+  let to_bytes v =
+    let b = Bytes.create 4 in
+    Bytes.set_int32_le b 0 v;
+    b
+end
+
 (** Module type of unsigned 16bit integers *)
 module type UInt16 = sig
   type t
@@ -31,6 +51,7 @@ module type UInt16 = sig
 
   val zero : t
   val of_int32 : int32 -> res
+  val encode : t -> int32
 end
 
 module UInt16 = struct
@@ -48,6 +69,8 @@ module UInt16 = struct
         (Int32.(logand i 0xffffl), Int32.(shift_right_logical i 16))
       in
       Multiple { low; high }
+
+  let encode = Fun.id
 end
 
 (** Module type of 24bit signed integers *)
@@ -56,13 +79,15 @@ module type Int24 = sig
 
   val zero : t
   val of_int : int -> t option
+  val encode : t -> int32
 end
 
 module Int24 = struct
-  type t = int
+  type t = int32
 
-  let zero = 0
-  let of_int i = if is_int24 i then Some i else None
+  let zero = 0l
+  let of_int i = if is_int24 i then Some (Int32.of_int i) else None
+  let encode = Fun.id
 end
 
 (** Module type of an offset in the program *)
@@ -99,7 +124,7 @@ module type Immediate = sig
   val to_uint16 : t -> UInt16.res
   (** Convert it to a UInt16 *)
 
-  val to_word : t -> bytes
+  val to_word : t -> Word.t
   (** Convert it to a word *)
 end
 
@@ -108,11 +133,7 @@ module Immediate = struct
 
   let of_int i = if is_int32 i || is_uint32 i then Some i else None
   let to_uint16 i = UInt16.of_int32 (Int32.of_int i) (* TODO : Check This ! *)
-
-  let to_word i =
-    let b = Bytes.create 4 in
-    Bytes.set_int32_le b 0 (Int32.of_int i);
-    b
+  let to_word i = Int32.of_int i
 end
 
 (** A 32bit address in the program *)

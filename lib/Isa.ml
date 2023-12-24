@@ -59,10 +59,10 @@ type isa =
   | ShiftRightLogical of reg * reg * reg
   (* Memory operations *)
   | Load of reg * reg
-  | LoadImmediateAdd of reg * UInt16.t * load_mode * reg
+  | LoadImmediateAdd of reg * reg * UInt16.t * load_mode
   | Store of reg * reg
   (* Flow instructions *)
   | Jmp of reg
-  | JmpCond of flag * reg
+  | JmpCond of reg * flag
   | JmpImmediate of Int24.t
-  | JmpImmediateCond of flag * Int24.t
+  | JmpImmediateCond of Int24.t * flag

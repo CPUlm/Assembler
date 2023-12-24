@@ -1,3 +1,14 @@
+module type Word = sig
+  type t
+
+  val zero : t
+  val add_at : t -> int32 -> int -> t
+  val to_bytes : t -> bytes
+end
+
+module Word : Word
+(** A word in our machine *)
+
 (** Module type of unsigned 16bit integers *)
 module type UInt16 = sig
   type t
@@ -5,6 +16,7 @@ module type UInt16 = sig
 
   val zero : t
   val of_int32 : int32 -> res
+  val encode : t -> int32
 end
 
 module UInt16 : UInt16
@@ -16,6 +28,7 @@ module type Int24 = sig
 
   val zero : t
   val of_int : int -> t option
+  val encode : t -> int32
 end
 
 module Int24 : Int24
@@ -50,7 +63,7 @@ module type Immediate = sig
   val to_uint16 : t -> UInt16.res
   (** Convert it to a UInt16 *)
 
-  val to_word : t -> bytes
+  val to_word : t -> Word.t
   (** Convert it to a word *)
 end
 

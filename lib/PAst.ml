@@ -8,8 +8,14 @@ and future_value =
   | FuturePLabelLoad of reg * ProgramLabel.t * reg
   | FutureJumpOffset of flag option * ProgramLabel.t
 
-type tprog_pos = {
-  prog_pinstrs : (ProgramAddress.t * (isa, future_instr) Either.t) Monoid.t;
-  prog_label_mapping : ProgramLabel.t SMap.t;
-  prog_label_position : ProgramAddress.t ProgramLabel.map;
+type pprog = {
+  pprog_instrs : (ProgramAddress.t * (isa, future_instr) Either.t) Monoid.t;
+  pprog_label_mapping : ProgramLabel.t SMap.t;
+  pprog_label_position : ProgramAddress.t ProgramLabel.map;
+}
+
+type fprog = {
+  fprog_instrs : (ProgramAddress.t * isa) Monoid.t;
+  fprog_label_mapping : ProgramLabel.t SMap.t;
+  fprog_label_position : ProgramAddress.t ProgramLabel.map;
 }
