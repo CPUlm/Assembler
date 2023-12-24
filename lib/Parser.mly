@@ -18,7 +18,7 @@
 %token <Isa.flag> JMPC
 
 (* Directives *)
-%token DATA TEXT STRING ZSTRING INT
+%token DATA TEXT STRING ZSTRING INT INCLUDE
 
 (* Registers *)
 %token <int> R
