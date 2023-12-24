@@ -1,7 +1,7 @@
 open Isa
 open PAst
 open Integers
-open EncodingStruct
+open EncodedFile
 
 let encode_opcode (pos, v) inst =
   let opcode_size = 4 in

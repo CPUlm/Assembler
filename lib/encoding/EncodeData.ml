@@ -1,6 +1,6 @@
 open Ast
 open TAst
-open EncodingStruct
+open EncodedFile
 open Labels
 open Integers
 open ErrorUtils

@@ -1,6 +1,6 @@
 open Ast
 open Isa
-open EncodingStruct
+open EncodedFile
 open TAst
 open Integers
 open Labels
