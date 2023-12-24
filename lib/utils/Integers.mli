@@ -94,6 +94,9 @@ module type Address = sig
   val pp : Format.formatter -> t -> unit
   (** Pretty print the address *)
 
+  val is_after : t -> t -> bool
+  (** [is_after a1 a2] checks if [a1] is after [a2] *)
+
   module Set : Set.S with type elt = t
 
   type set = Set.t

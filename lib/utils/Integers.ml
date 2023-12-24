@@ -129,6 +129,7 @@ module type Address = sig
   val with_offset : t -> Offset.t -> t
   val well_defined : t -> Offset.t -> bool
   val pp : Format.formatter -> t -> unit
+  val is_after : t -> t -> bool
 
   module Set : Set.S with type elt = t
 
@@ -168,6 +169,9 @@ module Address = struct
   let with_offset addr offs = normalize_addr (addr + offs)
   let well_defined addr offs = Option.is_some (of_int (addr + offs))
   let pp ppf t = Format.fprintf ppf "%x" t
+
+  (** [is_after a1 a2] checks if [a1] is after [a2] *)
+  let is_after a1 a2 = a1 >= a2
 
   module Set = Set.Make (Int)
 

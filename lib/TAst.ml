@@ -1,51 +1,7 @@
-open PositionUtils
-open Ast
+open Labels
 open Integers
-
-module type Id = sig
-  type t
-
-  val fresh : string option -> position -> t
-  val name : t -> string option
-  val position : t -> position
-
-  module Map : Map.S with type key = t
-  module Set : Set.S with type elt = t
-
-  type 'a map = 'a Map.t
-  type set = Set.t
-end
-
-(** A module to manipulate named unique ids. *)
-module ProgramLabel : Id = struct
-  module CMP = struct
-    type t = int * string option * position
-
-    let compare ((x, _, _) : t) ((y, _, _) : t) = Stdlib.compare x y
-  end
-
-  type t = CMP.t
-
-  let fresh =
-    let cpt = ref 0 in
-    fun f pos ->
-      incr cpt;
-      (!cpt, f, pos)
-
-  let name (_, name, _) = name
-  let position (_, _, pos) = pos
-
-  module Map = Map.Make (CMP)
-  module Set = Set.Make (CMP)
-
-  type 'a map = 'a Map.t
-  type set = Set.t
-end
-
-(** The mode of the load *)
-type load_mode = HighHalf | LowHalf
-
-type reg = Ast.reg_kind
+open Isa
+open PositionUtils
 
 type tinstr = tinstr_kind pos
 (** Type of a typed instruction, with its position in the source file. *)
@@ -71,8 +27,9 @@ and tinstr_kind =
   | TLoadProgLabelAdd of reg * ProgramLabel.t * reg option
   | TStore of reg * reg
   (* Flow instructions *)
+  | TJmpLabel of flag option * ProgramLabel.t
   | TJmpAddr of flag option * reg
-  | TJmpOffset of flag option * offset
+  | TJmpOffset of flag option * Offset.t pos
   | TJmpImmediate of flag option * ProgramAddress.t pos
   (* Function Call *)
   | TCallAddr of reg
@@ -80,25 +37,15 @@ and tinstr_kind =
 
 type data = TString of (int * bytes) | TInt of Immediate.t
 
-module SSet = Set.Make (String)
-module SMap = Map.Make (String)
-
-(** [default_text_color] : Default Text Color *)
-let default_text_color = Black
-
-(** [default_background_color] : Default Background Color *)
-let default_background_color = White
-
-type data_file = {
-  data_bytes : bytes;
-  mem_next_free : MemoryAddress.t;
-  data_mapping : (MemoryAddress.t * position) SMap.t;
-}
-
 type instr_section = {
   label : ProgramLabel.t;
   body : tinstr Monoid.t;
   pos : position;
+}
+
+type tprog_instr = {
+  prog_sections : instr_section Monoid.t;
+  prog_label_mapping : ProgramLabel.t SMap.t;
 }
 
 let get_instr i = i.v

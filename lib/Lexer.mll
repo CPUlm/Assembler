@@ -25,10 +25,10 @@ let resolve_instruction =
           ("store",STORE);
           ("loadi",LOADI);
           ("jmp",JMP);
-          ("jmp.z",JMPC Ast.Zero);
-          ("jmp.n",JMPC Ast.Negative);
-          ("jmp.c",JMPC Ast.UnsignedUnderflowFlag);
-          ("jmp.v",JMPC Ast.SignedOverflowFlag);
+          ("jmp.z",JMPC Isa.Zero);
+          ("jmp.n",JMPC Isa.Negative);
+          ("jmp.c",JMPC Isa.UnsignedUnderflowFlag);
+          ("jmp.v",JMPC Isa.SignedOverflowFlag);
           ("nop",NOP);
           ("neg",NEG);
           ("not",NOT);

@@ -1,6 +1,9 @@
 open Ast
+open Isa
+open EncodingStruct
 open TAst
 open Integers
+open Labels
 open PositionUtils
 open SplitFile
 open ErrorUtils
@@ -35,14 +38,16 @@ let check_writable_reg r =
 
 let check_prog_label labels label =
   match SMap.find_opt label.v labels with
-  | Some (i, _) -> i
+  | Some i -> i
   | None ->
-      let txt = Format.sprintf "The label '%s' is not defined." label.v in
+      let txt =
+        Format.sprintf "The program label '%s' is not defined." label.v
+      in
       error txt label.pos
 
 let process_load_label data_sections prog_labels l =
-  match SMap.find_opt l.v data_sections.data_mapping with
-  | Some i -> Either.left i
+  match SMap.find_opt l.v data_sections.data_label_mapping with
+  | Some label -> Either.left label
   | None -> check_prog_label prog_labels l |> Either.right
 
 let compile_load instr r1 int16 r2 =
@@ -66,92 +71,91 @@ let compile_load instr r1 int16 r2 =
 
        The boolean flag returned with the potentionally used program label, is here
        to mark if its associated address must be stored in memory. *)
-let process_instr data_sections
-    (prog_labels : (ProgramLabel.t * position) SMap.t) instr =
+let process_instr data_sections prog_labels instr =
   match instr.v with
-  | Nop -> return instr (TAnd (R0, R0, R0))
-  | And (r1, r2, r3) ->
+  | AstNop -> return instr (TAnd (R0, R0, R0))
+  | AstAnd (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TAnd (r1, r2, r3))
-  | Or (r1, r2, r3) ->
+  | AstOr (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TOr (r1, r2, r3))
-  | Nor (r1, r2, r3) ->
+  | AstNor (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TNor (r1, r2, r3))
-  | Xor (r1, r2, r3) ->
+  | AstXor (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TXor (r1, r2, r3))
-  | Not (r1, r2) ->
+  | AstNot (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       return instr (TXor (r1, r2, R0))
-  | Add (r1, r2, r3) ->
+  | AstAdd (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TAdd (r1, r2, r3))
-  | Sub (r1, r2, r3) ->
+  | AstSub (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TSub (r1, r2, r3))
-  | Mul (r1, r2, r3) ->
+  | AstMul (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TMul (r1, r2, r3))
-  | Div (r1, r2, r3) ->
+  | AstDiv (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TDiv (r1, r2, r3))
-  | Neg (r1, r2) ->
+  | AstNeg (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       return instr (TSub (r1, R0, r2))
-  | Incr (r1, r2) ->
+  | AstIncr (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       return instr (TAdd (r1, r2, R1))
-  | Decr (r1, r2) ->
+  | AstDecr (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       return instr (TSub (r1, r2, R1))
-  | ShiftLeftLogical (r1, r2, r3) ->
+  | AstShiftLeftLogical (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TShiftLeftLogical (r1, r2, r3))
-  | ShiftRightArith (r1, r2, r3) ->
+  | AstShiftRightArith (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TShiftRightArith (r1, r2, r3))
-  | ShiftRightLogical (r1, r2, r3) ->
+  | AstShiftRightLogical (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       let r3 = check_readable_register r3 in
       return instr (TShiftRightLogical (r1, r2, r3))
-  | Push r1 ->
+  | AstPush r1 ->
       let r1 = check_readable_register r1 in
       return_l instr [ TStore (SP, r1); TAdd (SP, SP, R1) ]
-  | Pop r1 ->
+  | AstPop r1 ->
       let r1 = check_writable_reg r1 in
       return_l instr [ TLoad (r1, SP); TSub (SP, SP, R1) ]
-  | Load (r1, r2) ->
+  | AstLoad (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       return instr (TLoad (r1, r2))
-  | LoadImmediateAdd (r1, imm, r2) ->
+  | AstLoadImmediateAdd (r1, imm, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 =
         match r2 with
@@ -160,7 +164,7 @@ let process_instr data_sections
       in
       let imm = Immediate.to_uint16 imm.v in
       (compile_load instr r1 imm r2, None, None)
-  | LoadImmediateAddLabel (r1, label, r2) -> (
+  | AstLoadImmediateAddLabel (r1, label, r2) -> (
       let r1 = check_writable_reg r1 in
       let r2 =
         match r2 with
@@ -168,35 +172,36 @@ let process_instr data_sections
         | None -> None
       in
       match process_load_label data_sections prog_labels label with
-      | Left (lid, _) ->
-          let l = compile_load instr r1 (MemoryAddress.to_uint16 lid) r2 in
-          (l, None, Some lid)
+      | Left data_lid ->
+          let addr =
+            DataLabel.Map.find data_lid data_sections.data_label_position
+          in
+          let l = compile_load instr r1 (MemoryAddress.to_uint16 addr) r2 in
+          (l, None, Some data_lid)
       | Right lid ->
           let i = TLoadProgLabelAdd (r1, lid, r2) in
           (Monoid.of_elm (mk_pos instr.pos i), Some lid, None))
-  | Store (r1, r2) ->
+  | AstStore (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       return instr (TStore (r1, r2))
-  | Mov (r1, r2) ->
+  | AstMov (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
       return instr (TAdd (r1, r2, R0))
-  | Test r1 ->
+  | AstTest r1 ->
       let r1 = check_readable_register r1 in
       return instr (TAdd (R0, r1, R0))
-  | JmpLabel (f, label) ->
+  | AstJmpLabel (f, label) ->
       let lid = check_prog_label prog_labels label in
-      let l =
-        [ TLoadProgLabelAdd (PrivateReg, lid, None); TJmpAddr (f, PrivateReg) ]
-      in
-      (Monoid.of_list (mk_pos_l instr l), Some lid, None)
-  | JmpAddr (f, r1) ->
+      let m = Monoid.of_elm (mk_pos instr.pos (TJmpLabel (f, lid))) in
+      (m, Some lid, None)
+  | AstJmpAddr (f, r1) ->
       let r1 = check_readable_register r1 in
       return instr (TJmpAddr (f, r1))
-  | JmpOffset (f, imm) -> return instr (TJmpOffset (f, imm))
-  | JmpImmediate (f, imm) -> return instr (TJmpImmediate (f, imm))
-  | Halt ->
+  | AstJmpOffset (f, imm) -> return instr (TJmpOffset (f, imm))
+  | AstJmpImmediate (f, imm) -> return instr (TJmpImmediate (f, imm))
+  | AstHalt ->
       (* We set [PrivateReg] to the last address *)
       let l =
         compile_load instr PrivateReg ProgramAddress.(to_uint16 last) None
@@ -204,14 +209,14 @@ let process_instr data_sections
       (* And we jump *)
       let j = Monoid.of_elm (mk_pos instr.pos (TJmpAddr (None, PrivateReg))) in
       (Monoid.(l @@ j), None, None)
-  | CallAddr r1 ->
+  | AstCallAddr r1 ->
       let r1 = check_readable_register r1 in
       return instr (TCallAddr r1)
-  | CallLabel label ->
+  | AstCallLabel label ->
       let lid = check_prog_label prog_labels label in
       let m = Monoid.of_elm (mk_pos instr.pos (TCallLabel lid)) in
       (m, Some lid, None)
-  | Ret ->
+  | AstRet ->
       return_l instr
         [
           (* We move SP to FP. *)
@@ -229,29 +234,26 @@ let process_instr data_sections
         ]
 
 let pre_encode_instr data_sections f =
-  let prog_sections, prog_labels =
+  let prog_sections, prog_label_mapping =
     split_by_label
-      ( SMap.empty,
-        (fun l ->
-          match SMap.find_opt l.v data_sections.data_mapping with
-          | None -> ProgramLabel.fresh (Some l.v) l.pos
-          | Some (_, decl_pos) ->
-              let txt =
-                Format.asprintf
-                  "The label '%s' has already been declared as a data label \
-                   here : %a"
-                  l.v pp_pos decl_pos
-              in
-              error txt l.pos),
-        (fun l id -> SMap.add l.v (id, l.pos)),
-        SMap.mem )
+      (fun l ->
+        match SMap.find_opt l.v data_sections.data_label_mapping with
+        | None -> ProgramLabel.fresh l.v l.pos
+        | Some lbl ->
+            let txt =
+              Format.asprintf
+                "The label '%s' has already been declared as a data label here \
+                 : %a"
+                l.v pp_pos (DataLabel.position lbl)
+            in
+            error txt l.pos)
       f.text
   in
-  match SMap.find_opt "main" prog_labels with
+  match SMap.find_opt "main" prog_label_mapping with
   | None ->
       file_warning "No label 'main' found, skipping all instructions.";
-      Monoid.empty
-  | Some (mainid, _) ->
+      { prog_sections = Monoid.empty; prog_label_mapping = SMap.empty }
+  | Some mainid ->
       let used_prog_lbl, used_mem_lbl, prog_sections =
         Monoid.fold_left
           (fun (pls, dls, acc) instr_sec ->
@@ -259,7 +261,9 @@ let pre_encode_instr data_sections f =
             let pls, dls, body =
               Monoid.fold_left
                 (fun (pls, dls, acc) i ->
-                  let a, pl, dl = process_instr data_sections prog_labels i in
+                  let a, pl, dl =
+                    process_instr data_sections prog_label_mapping i
+                  in
                   let acc = Monoid.(acc @@ a) in
                   let pls =
                     match pl with
@@ -269,14 +273,14 @@ let pre_encode_instr data_sections f =
                   let dls =
                     match dl with
                     | None -> dls
-                    | Some dl -> MemoryAddress.Set.add dl dls
+                    | Some dl -> DataLabel.Set.add dl dls
                   in
                   (pls, dls, acc))
                 (pls, dls, Monoid.empty) insts
             in
             let new_sec = { label; body; pos = instr_sec.pos } in
             (pls, dls, Monoid.(acc @@ of_elm new_sec)))
-          (ProgramLabel.Set.empty, MemoryAddress.Set.empty, Monoid.empty)
+          (ProgramLabel.Set.empty, DataLabel.Set.empty, Monoid.empty)
           prog_sections
       in
       (* Mark main label as used to avoid useless warnings about it. It it always
@@ -284,22 +288,22 @@ let pre_encode_instr data_sections f =
       let used_prog_lbl = ProgramLabel.Set.add mainid used_prog_lbl in
       let unused_prog_label =
         SMap.filter
-          (fun _ (lid, _) -> ProgramLabel.Set.mem lid used_prog_lbl |> not)
-          prog_labels
+          (fun _ lid -> ProgramLabel.Set.mem lid used_prog_lbl |> not)
+          prog_label_mapping
       in
       let unused_mem_label =
         SMap.filter
-          (fun _ (lid, _) -> MemoryAddress.Set.mem lid used_mem_lbl |> not)
-          data_sections.data_mapping
+          (fun _ lid -> DataLabel.Set.mem lid used_mem_lbl |> not)
+          data_sections.data_label_mapping
       in
       SMap.iter
-        (fun label (_, pos) ->
+        (fun label lbl_id ->
           let txt = Format.asprintf "The program label %s is not used." label in
-          warning txt pos)
+          warning txt (ProgramLabel.position lbl_id))
         unused_prog_label;
       SMap.iter
-        (fun label (_, pos) ->
+        (fun label lbl_id ->
           let txt = Format.asprintf "The data label %s is not used." label in
-          warning txt pos)
+          warning txt (DataLabel.position lbl_id))
         unused_mem_label;
-      prog_sections
+      { prog_sections; prog_label_mapping }

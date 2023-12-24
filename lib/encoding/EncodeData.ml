@@ -1,11 +1,13 @@
 open Ast
 open TAst
+open EncodingStruct
+open Labels
 open Integers
 open ErrorUtils
 open PositionUtils
 open SplitFile
 
-let add_section cur_pos sec_name sec_size sec_pos =
+let add_section cur_pos sec_label sec_size =
   match MemoryAddress.next cur_pos with
   | Some i -> i
   | None ->
@@ -13,9 +15,9 @@ let add_section cur_pos sec_name sec_size sec_pos =
         Format.sprintf
           "The section '%s' of size %d, is too long to be in a 32bit address \
            space."
-          sec_name sec_size
+          (DataLabel.name sec_label) sec_size
       in
-      error txt sec_pos
+      error txt (DataLabel.position sec_label)
 
 module StyleSet = Set.Make (struct
   type t = Ast.text_style
@@ -121,34 +123,26 @@ let encode_section sec =
   (size, bytes_mon)
 
 let encode_data (f : file) =
-  let data_decls, _ =
+  let data_decls, data_label_mapping =
     split_by_label
-      ( SSet.empty,
-        (fun l ->
-          if l.v = "main" then
-            let txt =
-              Format.asprintf "The label 'main' cannot be used as a data label."
-            in
-            error txt l.pos
-          else (l.v, l.pos)),
-        (fun i _ -> SSet.add i.v),
-        SSet.mem )
+      (fun l ->
+        if l.v = "main" then
+          let txt =
+            Format.asprintf "The label 'main' cannot be used as a data label."
+          in
+          error txt l.pos
+        else DataLabel.fresh l.v l.pos)
       f.data
   in
-  let mem_next_free, data, data_mapping =
+  let _, data_bytes, data_label_position =
     Monoid.fold_left
-      (fun (cur_pos, data, mapping) sec ->
-        let (sec_name, pos), sec_insts = sec.v in
+      (fun (cur_pos, data, lbl_pos) sec ->
+        let sec_label, sec_insts = sec.v in
         let sec_size, sec_bytes = encode_section sec_insts in
-        let mapping = SMap.add sec_name (cur_pos, pos) mapping in
-        let cur_pos = add_section cur_pos sec_name sec_size pos in
-        (cur_pos, Monoid.(data @@ sec_bytes), mapping))
-      (MemoryAddress.first, Monoid.empty, SMap.empty)
+        let lbl_pos = DataLabel.Map.add sec_label cur_pos lbl_pos in
+        let cur_pos = add_section cur_pos sec_label sec_size in
+        (cur_pos, Monoid.(data @@ sec_bytes), lbl_pos))
+      (MemoryAddress.first, Monoid.empty, DataLabel.Map.empty)
       data_decls
   in
-  let data_bytes =
-    Monoid.fold_left
-      (fun acc m -> Bytes.concat Bytes.empty [ acc; m ])
-      Bytes.empty data
-  in
-  { data_bytes; mem_next_free; data_mapping }
+  { data_bytes; data_label_mapping; data_label_position }

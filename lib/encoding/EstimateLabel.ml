@@ -1,27 +1,18 @@
 open Integers
+open Labels
 open TAst
 open ErrorUtils
 
 let section_too_large sec start_addr estim_size =
-  match ProgramLabel.name sec.label with
-  | Some name ->
-      let txt =
-        Format.asprintf
-          "The '%s' section defined at %a is too long to be addressed with 32 \
-           bits. In fact, it could have started at address %a, which is not \
-           compatible with its size, which is estimated at %d instructions."
-          name pp_pos sec.pos ProgramAddress.pp start_addr estim_size
-      in
-      error txt sec.pos
-  | None ->
-      let txt =
-        Format.asprintf
-          "The section starting at %a is too long to be addressed with 32 \
-           bits. In fact, it could have started at address %a, which is not \
-           compatible with its size, which is estimated at %d instructions."
-          pp_pos sec.pos ProgramAddress.pp start_addr estim_size
-      in
-      error txt sec.pos
+  let txt =
+    Format.asprintf
+      "The '%s' section defined at %a is too long to be addressed with 32 \
+       bits. In fact, it could have started at address %a, which is not \
+       compatible with its size, which is estimated at %d instructions."
+      (ProgramLabel.name sec.label)
+      pp_pos sec.pos ProgramAddress.pp start_addr estim_size
+  in
+  error txt sec.pos
 
 let max_section_end_addr lbl_map start_addr sec =
   let atomic_op (max_size, max_addr) =
@@ -88,6 +79,8 @@ let max_section_end_addr lbl_map start_addr sec =
             load_address acc (ProgramLabel.Map.find_opt lbl lbl_map)
         | TStore _ -> atomic_op acc
         (* Flow instructions *)
+        | TJmpLabel (_, lbl) ->
+            jump_address acc (ProgramLabel.Map.find_opt lbl lbl_map)
         | TJmpAddr _ -> atomic_op acc
         | TJmpOffset (_, offset) -> jump_offset acc offset.v
         | TJmpImmediate (_, prog_addr) -> jump_address acc (Some prog_addr.v)
@@ -130,13 +123,13 @@ let max_section_end_addr lbl_map start_addr sec =
   in
   end_addr
 
-let estimate_labels instrs =
+let estimate_labels prog =
   let label_estimation, _ =
     Monoid.fold_left
       (fun (map, curr_pos) sec ->
         let end_addr = max_section_end_addr map curr_pos sec in
         (ProgramLabel.Map.add sec.label end_addr map, end_addr))
       (ProgramLabel.Map.empty, ProgramAddress.first)
-      instrs
+      prog.prog_sections
   in
   label_estimation
