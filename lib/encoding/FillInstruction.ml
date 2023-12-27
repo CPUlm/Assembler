@@ -29,41 +29,40 @@ let fill_instruction pprog =
     Monoid.map
       (fun (addr, instr) ->
         match instr with
-        | Either.Left i -> Monoid.of_elm (addr, i)
+        | Either.Left i ->
+            Monoid.of_elm (addr, i)
         | Either.Right finst -> (
-            match finst.op with
-            | FuturePLabelLoad (r1, lbl, r2) -> (
-                let target_addr =
-                  ProgramLabel.Map.find lbl pprog.pprog_label_position
-                in
-                match ProgramAddress.to_uint16 target_addr with
-                | Single i ->
-                    pad addr
-                      [ LoadImmediateAdd (r1, r2, i, LowHalf) ]
-                      finst.res_space
-                | Multiple i ->
-                    pad addr
-                      [
-                        LoadImmediateAdd (r1, r2, i.low, LowHalf);
-                        LoadImmediateAdd (r1, r1, i.high, HighHalf);
-                      ]
-                      finst.res_space)
-            | FutureJumpOffset (flag, lbl) -> (
-                let target_addr =
-                  ProgramLabel.Map.find lbl pprog.pprog_label_position
-                in
-                let ofs = ProgramAddress.diff addr target_addr in
-                match Offset.to_int24 ofs with
-                | Some ofs -> (
-                    match flag with
-                    | Some f ->
-                        pad addr [ JmpImmediateCond (ofs, f) ] finst.res_space
-                    | None -> pad addr [ JmpImmediate ofs ] finst.res_space)
-                | None -> failwith "Expected an Int24-compatible offset.")))
+          match finst.op with
+          | FuturePLabelLoad (r1, lbl, r2) -> (
+              let target_addr =
+                ProgramLabel.Map.find lbl pprog.pprog_label_position
+              in
+              match ProgramAddress.to_uint16 target_addr with
+              | Single i ->
+                  pad addr
+                    [LoadImmediateAdd (r1, r2, i, LowHalf)]
+                    finst.res_space
+              | Multiple i ->
+                  pad addr
+                    [ LoadImmediateAdd (r1, r2, i.low, LowHalf)
+                    ; LoadImmediateAdd (r1, r1, i.high, HighHalf) ]
+                    finst.res_space )
+          | FutureJumpOffset (flag, lbl) -> (
+              let target_addr =
+                ProgramLabel.Map.find lbl pprog.pprog_label_position
+              in
+              let ofs = ProgramAddress.diff addr target_addr in
+              match Offset.to_int24 ofs with
+              | Some ofs -> (
+                match flag with
+                | Some f ->
+                    pad addr [JmpImmediateCond (ofs, f)] finst.res_space
+                | None ->
+                    pad addr [JmpImmediate ofs] finst.res_space )
+              | None ->
+                  failwith "Expected an Int24-compatible offset." ) ) )
       pprog.pprog_instrs
   in
-  {
-    fprog_instrs;
-    fprog_label_mapping = pprog.pprog_label_mapping;
-    fprog_label_position = pprog.pprog_label_position;
-  }
+  { fprog_instrs
+  ; fprog_label_mapping= pprog.pprog_label_mapping
+  ; fprog_label_position= pprog.pprog_label_position }

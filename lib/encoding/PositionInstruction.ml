@@ -22,11 +22,11 @@ let add_future (cur_addr, acc) res v =
     raise (Invalid_argument "The number of operation reserved must be > 0")
   else
     let next_addr = repeat next cur_addr res in
-    ( next_addr,
-      Monoid.(
-        acc @@ of_elm (cur_addr, Either.Right { res_space = res; op = v })) )
+    ( next_addr
+    , Monoid.(acc @@ of_elm (cur_addr, Either.Right {res_space= res; op= v})) )
 
 let reserve_address (cur_addr, acc) = (next cur_addr, acc)
+
 let current_address = fst
 
 let computed_address (_, label_positioned) label =
@@ -61,7 +61,8 @@ let load_label labels_pos acc r1 label r2 =
 let load_address acc r1 addr r2 =
   let r2 = match r2 with Some r -> r | None -> R0 in
   match ProgramAddress.to_uint16 addr with
-  | Single imm -> add_instr acc (LoadImmediateAdd (r1, r2, imm, LowHalf))
+  | Single imm ->
+      add_instr acc (LoadImmediateAdd (r1, r2, imm, LowHalf))
   | Multiple imms ->
       let acc = add_instr acc (LoadImmediateAdd (r1, r2, imms.low, LowHalf)) in
       add_instr acc (LoadImmediateAdd (r1, r1, imms.high, HighHalf))
@@ -73,11 +74,13 @@ let jump_offset acc ofs f =
   let target_addr = ProgramAddress.with_offset (current_address acc) ofs in
   match Offset.to_int24 ofs with
   | Some ofs -> (
-      (* We can use the jmpi instruction directly :)
-         No need to used the absolute address. *)
-      match f with
-      | None -> (add_instr acc (JmpImmediate ofs), target_addr)
-      | Some f -> (add_instr acc (JmpImmediateCond (ofs, f)), target_addr))
+    (* We can use the jmpi instruction directly :)
+       No need to used the absolute address. *)
+    match f with
+    | None ->
+        (add_instr acc (JmpImmediate ofs), target_addr)
+    | Some f ->
+        (add_instr acc (JmpImmediateCond (ofs, f)), target_addr) )
   | None ->
       (* We can't use jmpi :/ *)
       (* We load the target_address into rpriv *)
@@ -129,8 +132,10 @@ let label_jump_kind labels_pos acc label =
      - Otherwise, it is after us, we return its estimation (witch is >= than his final address) *)
   let pseudo_addr =
     match computed_address labels_pos label with
-    | Some addr -> addr
-    | None -> estimated_address labels_pos label
+    | Some addr ->
+        addr
+    | None ->
+        estimated_address labels_pos label
   in
   (* We compute the offset between now and the pseudo address. This offset is:
      - Exact if negative (because pseudo_addr is exact if [ofs] < 0)
@@ -152,12 +157,15 @@ let label_jump_kind labels_pos acc label =
     returned by the function [label_jump_kind]. *)
 let jump_label acc label f jump_kind =
   match jump_kind with
-  | None -> add_future acc 1 (FutureJumpOffset (f, label))
+  | None ->
+      add_future acc 1 (FutureJumpOffset (f, label))
   | Some i -> (
       let acc = add_future acc i (FuturePLabelLoad (PrivateReg, label, R0)) in
       match f with
-      | Some f -> add_instr acc (JmpCond (PrivateReg, f))
-      | None -> add_instr acc (Jmp PrivateReg))
+      | Some f ->
+          add_instr acc (JmpCond (PrivateReg, f))
+      | None ->
+          add_instr acc (Jmp PrivateReg) )
 
 let position_section labels_pos begin_addr sec =
   let incr_and_ret accc v =
@@ -169,47 +177,59 @@ let position_section labels_pos begin_addr sec =
     Monoid.fold_left
       (fun ((acc, a2c) as accc) instr ->
         match instr.v with
-        | TAnd (r1, r2, r3) -> incr_and_ret accc (And (r1, r2, r3))
-        | TOr (r1, r2, r3) -> incr_and_ret accc (Or (r1, r2, r3))
-        | TNor (r1, r2, r3) -> incr_and_ret accc (Nor (r1, r2, r3))
-        | TXor (r1, r2, r3) -> incr_and_ret accc (Xor (r1, r2, r3))
-        | TAdd (r1, r2, r3) -> incr_and_ret accc (Add (r1, r2, r3))
-        | TSub (r1, r2, r3) -> incr_and_ret accc (Sub (r1, r2, r3))
-        | TMul (r1, r2, r3) -> incr_and_ret accc (Mul (r1, r2, r3))
-        | TDiv (r1, r2, r3) -> incr_and_ret accc (Div (r1, r2, r3))
+        | TAnd (r1, r2, r3) ->
+            incr_and_ret accc (And (r1, r2, r3))
+        | TOr (r1, r2, r3) ->
+            incr_and_ret accc (Or (r1, r2, r3))
+        | TNor (r1, r2, r3) ->
+            incr_and_ret accc (Nor (r1, r2, r3))
+        | TXor (r1, r2, r3) ->
+            incr_and_ret accc (Xor (r1, r2, r3))
+        | TAdd (r1, r2, r3) ->
+            incr_and_ret accc (Add (r1, r2, r3))
+        | TSub (r1, r2, r3) ->
+            incr_and_ret accc (Sub (r1, r2, r3))
+        | TMul (r1, r2, r3) ->
+            incr_and_ret accc (Mul (r1, r2, r3))
+        | TDiv (r1, r2, r3) ->
+            incr_and_ret accc (Div (r1, r2, r3))
         | TShiftLeftLogical (r1, r2, r3) ->
             incr_and_ret accc (ShiftLeftLogical (r1, r2, r3))
         | TShiftRightArith (r1, r2, r3) ->
             incr_and_ret accc (ShiftRightArith (r1, r2, r3))
         | TShiftRightLogical (r1, r2, r3) ->
             incr_and_ret accc (ShiftRightLogical (r1, r2, r3))
-        | TLoad (r1, r2) -> incr_and_ret accc (Load (r1, r2))
+        | TLoad (r1, r2) ->
+            incr_and_ret accc (Load (r1, r2))
         | TLoadImmediateAdd (r1, imm, mode, r2) ->
             incr_and_ret accc (LoadImmediateAdd (r1, r2, imm, mode))
         | TLoadProgLabelAdd (r1, prg_lbl, r2) ->
             let acc = load_label labels_pos acc r1 prg_lbl r2 in
             (acc, a2c)
-        | TStore (r1, r2) -> incr_and_ret accc (Store (r1, r2))
+        | TStore (r1, r2) ->
+            incr_and_ret accc (Store (r1, r2))
         | TJmpLabel (f, label) ->
             let _, jump_kind = label_jump_kind labels_pos acc label in
             let acc = jump_label acc label f jump_kind in
             (acc, a2c)
-        | TJmpAddr (None, r1) -> incr_and_ret accc (Jmp r1)
-        | TJmpAddr (Some f, r1) -> incr_and_ret accc (JmpCond (r1, f))
+        | TJmpAddr (None, r1) ->
+            incr_and_ret accc (Jmp r1)
+        | TJmpAddr (Some f, r1) ->
+            incr_and_ret accc (JmpCond (r1, f))
         | TJmpOffset (f, offset) ->
-            (if not (ProgramAddress.well_defined (current_address acc) offset.v)
-             then
-               let txt =
-                 Format.asprintf
-                   "The address to which the program jumps, calculated from \
-                    the  offset '%a' of the current address, is not well \
-                    defined. In fact, this address is outside the permitted \
-                    range (from %a to %a). The resulting address is \
-                    implementation defined, please fix this."
-                   Offset.pp offset.v ProgramAddress.pp ProgramAddress.first
-                   ProgramAddress.pp ProgramAddress.last
-               in
-               warning txt offset.pos);
+            ( if not (ProgramAddress.well_defined (current_address acc) offset.v)
+              then
+                let txt =
+                  Format.asprintf
+                    "The address to which the program jumps, calculated from \
+                     the  offset '%a' of the current address, is not well \
+                     defined. In fact, this address is outside the permitted \
+                     range (from %a to %a). The resulting address is \
+                     implementation defined, please fix this."
+                    Offset.pp offset.v ProgramAddress.pp ProgramAddress.first
+                    ProgramAddress.pp ProgramAddress.last
+                in
+                warning txt offset.pos ) ;
             let acc, target_addr = jump_offset acc offset.v f in
             (acc, ProgramAddress.Map.add target_addr offset.pos a2c)
         | TJmpImmediate (f, target_addr) ->
@@ -230,7 +250,7 @@ let position_section labels_pos begin_addr sec =
             let nb_op, jump_kind = label_jump_kind labels_pos acc label in
             let acc = setup_stack acc nb_op in
             let acc = jump_label acc label None jump_kind in
-            (acc, a2c))
+            (acc, a2c) )
       ((begin_addr, Monoid.empty), ProgramAddress.Map.empty)
       sec.body
   in
@@ -248,11 +268,11 @@ let position_instrs estim_labels prog =
         in
         let label_map = ProgramLabel.Map.add sec.label curr_addr label_map in
         let p_instrs = Monoid.(p_instrs @@ instrs) in
-        (a2c, label_map, next_addr, p_instrs))
-      ( ProgramAddress.Map.empty,
-        ProgramLabel.Map.empty,
-        ProgramAddress.first,
-        Monoid.empty )
+        (a2c, label_map, next_addr, p_instrs) )
+      ( ProgramAddress.Map.empty
+      , ProgramLabel.Map.empty
+      , ProgramAddress.first
+      , Monoid.empty )
       prog.prog_sections
   in
   ProgramAddress.Map.iter
@@ -264,10 +284,8 @@ let position_instrs estim_labels prog =
              instructions ends at %a."
             ProgramAddress.pp addr ProgramAddress.pp next_addr
         in
-        warning txt pos)
-    a2c;
-  {
-    pprog_instrs;
-    pprog_label_mapping = prog.prog_label_mapping;
-    pprog_label_position;
-  }
+        warning txt pos )
+    a2c ;
+  { pprog_instrs
+  ; pprog_label_mapping= prog.prog_label_mapping
+  ; pprog_label_position }

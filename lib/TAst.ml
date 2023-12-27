@@ -3,8 +3,8 @@ open Integers
 open Isa
 open PositionUtils
 
-type tinstr = tinstr_kind pos
 (** Type of a typed instruction, with its position in the source file. *)
+type tinstr = tinstr_kind pos
 
 and tinstr_kind =
   (* Logical Operations *)
@@ -37,15 +37,11 @@ and tinstr_kind =
 
 type data = TString of (int * Word.t Monoid.t) | TInt of Immediate.t
 
-type instr_section = {
-  label : ProgramLabel.t;
-  body : tinstr Monoid.t;
-  pos : position;
-}
+type instr_section =
+  {label: ProgramLabel.t; body: tinstr Monoid.t; pos: position}
 
-type tprog_instr = {
-  prog_sections : instr_section Monoid.t;
-  prog_label_mapping : ProgramLabel.t SMap.t;
-}
+type tprog_instr =
+  { prog_sections: instr_section Monoid.t
+  ; prog_label_mapping: ProgramLabel.t SMap.t }
 
 let get_instr i = i.v

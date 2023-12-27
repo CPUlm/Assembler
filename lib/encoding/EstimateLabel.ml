@@ -17,8 +17,10 @@ let section_too_large sec start_addr estim_size =
 let max_section_end_addr lbl_map start_addr sec =
   let atomic_op (max_size, max_addr) =
     match ProgramAddress.next max_addr with
-    | Some i -> (max_size + 1, i)
-    | None -> section_too_large sec max_addr max_size
+    | Some i ->
+        (max_size + 1, i)
+    | None ->
+        section_too_large sec max_addr max_size
   in
   let load_address acc addr_op =
     (* Only depend on the address. Because its known, min and max do not
@@ -59,66 +61,77 @@ let max_section_end_addr lbl_map start_addr sec =
       (fun ((_, curr_addr) as acc) (i : tinstr) ->
         match get_instr i with
         (* Logical Operations *)
-        | TAnd _ -> atomic_op acc
-        | TOr _ -> atomic_op acc
-        | TNor _ -> atomic_op acc
-        | TXor _ -> atomic_op acc
+        | TAnd _ ->
+            atomic_op acc
+        | TOr _ ->
+            atomic_op acc
+        | TNor _ ->
+            atomic_op acc
+        | TXor _ ->
+            atomic_op acc
         (* Arithmetic operation *)
-        | TAdd _ -> atomic_op acc
-        | TSub _ -> atomic_op acc
-        | TMul _ -> atomic_op acc
-        | TDiv _ -> atomic_op acc
+        | TAdd _ ->
+            atomic_op acc
+        | TSub _ ->
+            atomic_op acc
+        | TMul _ ->
+            atomic_op acc
+        | TDiv _ ->
+            atomic_op acc
         (* Shifts operations *)
-        | TShiftLeftLogical _ -> atomic_op acc
-        | TShiftRightArith _ -> atomic_op acc
-        | TShiftRightLogical _ -> atomic_op acc
+        | TShiftLeftLogical _ ->
+            atomic_op acc
+        | TShiftRightArith _ ->
+            atomic_op acc
+        | TShiftRightLogical _ ->
+            atomic_op acc
         (* Memory operations *)
-        | TLoad _ -> atomic_op acc
-        | TLoadImmediateAdd _ -> atomic_op acc
+        | TLoad _ ->
+            atomic_op acc
+        | TLoadImmediateAdd _ ->
+            atomic_op acc
         | TLoadProgLabelAdd (_, lbl, _) ->
             load_address acc (ProgramLabel.Map.find_opt lbl lbl_map)
-        | TStore _ -> atomic_op acc
+        | TStore _ ->
+            atomic_op acc
         (* Flow instructions *)
         | TJmpLabel (_, lbl) ->
             jump_address acc (ProgramLabel.Map.find_opt lbl lbl_map)
-        | TJmpAddr _ -> atomic_op acc
-        | TJmpOffset (_, offset) -> jump_offset acc offset.v
-        | TJmpImmediate (_, prog_addr) -> jump_address acc (Some prog_addr.v)
+        | TJmpAddr _ ->
+            atomic_op acc
+        | TJmpOffset (_, offset) ->
+            jump_offset acc offset.v
+        | TJmpImmediate (_, prog_addr) ->
+            jump_address acc (Some prog_addr.v)
         (* Function Call *)
         | TCallAddr _ ->
             (* We will load the current address in rpriv *)
             let acc = load_address acc (Some curr_addr) in
-
             (* Push rpriv to the stack : 2 atomic operations
                - store sp rpriv
                - add sp sp r1 *)
             let acc = atomic_op (atomic_op acc) in
-
             (* Push fp to the stack and update it : 3 operations
                - store sp fp
                - add fp sp r0     (mov fp sp)
                - add sp sp r1 *)
             let acc = atomic_op (atomic_op (atomic_op acc)) in
-
             (* And now, we can jump to the given register ! *)
             atomic_op acc
         | TCallLabel lbl ->
             (* We will load the current address in rpriv *)
             let acc = load_address acc (Some curr_addr) in
-
             (* Push rpriv to the stack : 2 atomic operations
                - store sp rpriv
                - add sp sp r1 *)
             let acc = atomic_op (atomic_op acc) in
-
             (* Push fp to the stack and update it : 3 operations
                - store sp fp
                - add fp sp r0     (mov fp sp)
                - add sp sp r1 *)
             let acc = atomic_op (atomic_op (atomic_op acc)) in
-
             (* And now, we jump to the addrres associate to [lbl] *)
-            jump_address acc (ProgramLabel.Map.find_opt lbl lbl_map))
+            jump_address acc (ProgramLabel.Map.find_opt lbl lbl_map) )
       (0, start_addr) sec.body
   in
   end_addr
@@ -128,7 +141,7 @@ let estimate_labels prog =
     Monoid.fold_left
       (fun (map, curr_pos) sec ->
         let end_addr = max_section_end_addr map curr_pos sec in
-        (ProgramLabel.Map.add sec.label end_addr map, end_addr))
+        (ProgramLabel.Map.add sec.label end_addr map, end_addr) )
       (ProgramLabel.Map.empty, ProgramAddress.first)
       prog.prog_sections
   in

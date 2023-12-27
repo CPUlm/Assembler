@@ -2,37 +2,44 @@ module type Word = sig
   type t
 
   val zero : t
+
   val add_at : t -> int32 -> int -> t
+
   val to_bytes : t -> bytes
 end
 
-module Word : Word
 (** A word in our machine *)
+module Word : Word
 
 (** Module type of unsigned 16bit integers *)
 module type UInt16 = sig
   type t
-  type res = Single of t | Multiple of { low : t; high : t }
+
+  type res = Single of t | Multiple of {low: t; high: t}
 
   val zero : t
+
   val of_int32 : int32 -> res
+
   val encode : t -> int32
 end
 
-module UInt16 : UInt16
 (** 16bit unsigned integer *)
+module UInt16 : UInt16
 
 (** Module type of 24bit signed integers *)
 module type Int24 = sig
   type t
 
   val zero : t
+
   val of_int : int -> t option
+
   val encode : t -> int32
 end
 
-module Int24 : Int24
 (** 16bit signed integer *)
+module Int24 : Int24
 
 (** Module type of an offset in the program *)
 module type Offset = sig
@@ -50,8 +57,8 @@ module type Offset = sig
   val pp : Format.formatter -> t -> unit
 end
 
-module Offset : Offset
 (** Offsets in the program *)
+module Offset : Offset
 
 (** Module type of an immediate value in the program, ie. a 32bit constant. *)
 module type Immediate = sig
@@ -67,8 +74,8 @@ module type Immediate = sig
   (** Convert it to a word *)
 end
 
-module Immediate : Immediate
 (** Immediates in the program *)
+module Immediate : Immediate
 
 (** A 32bit address in the program *)
 module type Address = sig
@@ -119,8 +126,8 @@ module type Address = sig
   type 'a map = 'a Map.t
 end
 
-module ProgramAddress : Address
 (** Addresses in the Program space *)
+module ProgramAddress : Address
 
-module MemoryAddress : Address
 (** Addresses in the Memory space *)
+module MemoryAddress : Address

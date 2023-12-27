@@ -29,8 +29,6 @@ setup.log
 # Local OPAM switch
 _opam/
 
-.ocamlformat
-
 ### LaTeX ###
 ## Core latex/pdflatex auxiliary files:
 *.aux
@@ -344,3 +342,8 @@ asm
 **/*.conflicts
 
 test.ulm
+
+**/*.do
+**/*.po
+**/*.ulm
+!test/**/*.ulm

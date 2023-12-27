@@ -9,36 +9,46 @@ open SplitFile
 open ErrorUtils
 
 let mk_pos_l p l = List.map (mk_pos p.pos) l
+
 let return p r = (Monoid.of_elm (mk_pos p.pos r), None, None)
+
 let return_l p l = (Monoid.of_list (mk_pos_l p l), None, None)
 
 let check_readable_register r =
   match r.v with
   | PrivateReg ->
-      warning "The register 'rpriv' should not be used here." r.pos;
+      warning "The register 'rpriv' should not be used here." r.pos ;
       r.v
-  | _ -> r.v
+  | _ ->
+      r.v
 
 let check_writable_reg r =
   match r.v with
   | R0 | R1 | SP | FP | PrivateReg ->
       let txt =
         Format.sprintf "Writing to read-only register '%s'."
-          (match r.v with
-          | R0 -> "r0"
-          | R1 -> "r1"
-          | SP -> "sp"
-          | FP -> "fp"
-          | PrivateReg -> "rpriv"
-          | _ -> failwith "Impossible case.")
+          ( match r.v with
+          | R0 ->
+              "r0"
+          | R1 ->
+              "r1"
+          | SP ->
+              "sp"
+          | FP ->
+              "fp"
+          | PrivateReg ->
+              "rpriv"
+          | _ ->
+              failwith "Impossible case." )
       in
-      warning txt r.pos;
+      warning txt r.pos ; r.v
+  | _ ->
       r.v
-  | _ -> r.v
 
 let check_prog_label labels label =
   match SMap.find_opt label.v labels with
-  | Some i -> i
+  | Some i ->
+      i
   | None ->
       let txt =
         Format.sprintf "The program label '%s' is not defined." label.v
@@ -47,8 +57,10 @@ let check_prog_label labels label =
 
 let process_load_label data_sections prog_labels l =
   match SMap.find_opt l.v data_sections.data_label_mapping with
-  | Some label -> Either.left label
-  | None -> check_prog_label prog_labels l |> Either.right
+  | Some label ->
+      Either.left label
+  | None ->
+      check_prog_label prog_labels l |> Either.right
 
 let compile_load instr r1 int16 r2 =
   let r2 = match r2 with Some r -> r | None -> R0 in
@@ -58,10 +70,8 @@ let compile_load instr r1 int16 r2 =
       Monoid.of_elm (mk_pos instr.pos i)
   | UInt16.Multiple i ->
       let l =
-        [
-          TLoadImmediateAdd (r1, i.low, LowHalf, r2);
-          TLoadImmediateAdd (r1, i.high, HighHalf, r1);
-        ]
+        [ TLoadImmediateAdd (r1, i.low, LowHalf, r2)
+        ; TLoadImmediateAdd (r1, i.high, HighHalf, r1) ]
       in
       Monoid.of_list (List.map (mk_pos instr.pos) l)
 
@@ -73,7 +83,8 @@ let compile_load instr r1 int16 r2 =
        to mark if its associated address must be stored in memory. *)
 let process_instr data_sections prog_labels instr =
   match instr.v with
-  | AstNop -> return instr (TAnd (R0, R0, R0))
+  | AstNop ->
+      return instr (TAnd (R0, R0, R0))
   | AstAnd (r1, r2, r3) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
@@ -147,10 +158,10 @@ let process_instr data_sections prog_labels instr =
       return instr (TShiftRightLogical (r1, r2, r3))
   | AstPush r1 ->
       let r1 = check_readable_register r1 in
-      return_l instr [ TStore (SP, r1); TAdd (SP, SP, R1) ]
+      return_l instr [TStore (SP, r1); TAdd (SP, SP, R1)]
   | AstPop r1 ->
       let r1 = check_writable_reg r1 in
-      return_l instr [ TLoad (r1, SP); TSub (SP, SP, R1) ]
+      return_l instr [TLoad (r1, SP); TSub (SP, SP, R1)]
   | AstLoad (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
@@ -159,8 +170,10 @@ let process_instr data_sections prog_labels instr =
       let r1 = check_writable_reg r1 in
       let r2 =
         match r2 with
-        | Some r -> Some (check_readable_register r)
-        | None -> None
+        | Some r ->
+            Some (check_readable_register r)
+        | None ->
+            None
       in
       let imm = Immediate.to_uint16 imm.v in
       (compile_load instr r1 imm r2, None, None)
@@ -168,8 +181,10 @@ let process_instr data_sections prog_labels instr =
       let r1 = check_writable_reg r1 in
       let r2 =
         match r2 with
-        | Some r -> Some (check_readable_register r)
-        | None -> None
+        | Some r ->
+            Some (check_readable_register r)
+        | None ->
+            None
       in
       match process_load_label data_sections prog_labels label with
       | Left data_lid ->
@@ -180,7 +195,7 @@ let process_instr data_sections prog_labels instr =
           (l, None, Some data_lid)
       | Right lid ->
           let i = TLoadProgLabelAdd (r1, lid, r2) in
-          (Monoid.of_elm (mk_pos instr.pos i), Some lid, None))
+          (Monoid.of_elm (mk_pos instr.pos i), Some lid, None) )
   | AstStore (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
@@ -199,8 +214,10 @@ let process_instr data_sections prog_labels instr =
   | AstJmpAddr (f, r1) ->
       let r1 = check_readable_register r1 in
       return instr (TJmpAddr (f, r1))
-  | AstJmpOffset (f, imm) -> return instr (TJmpOffset (f, imm))
-  | AstJmpImmediate (f, imm) -> return instr (TJmpImmediate (f, imm))
+  | AstJmpOffset (f, imm) ->
+      return instr (TJmpOffset (f, imm))
+  | AstJmpImmediate (f, imm) ->
+      return instr (TJmpImmediate (f, imm))
   | AstHalt ->
       (* We set [PrivateReg] to the last address *)
       let l =
@@ -218,27 +235,26 @@ let process_instr data_sections prog_labels instr =
       (m, Some lid, None)
   | AstRet ->
       return_l instr
-        [
-          (* We move SP to FP. *)
-          TAdd (SP, FP, R0);
-          (* We read the value pointed by SP (old FP) into FP. *)
-          TLoad (FP, SP);
-          (* We let SP point to the return address. *)
-          TSub (SP, SP, R1);
-          (* We read the value pointed by SP (ret address) into [PrivateReg]. *)
-          TLoad (PrivateReg, SP);
-          (* We restore SP to the original state before the call. *)
-          TSub (SP, SP, R1);
-          (* We jump to the return address. *)
-          TJmpAddr (None, PrivateReg);
-        ]
+        [ (* We move SP to FP. *)
+          TAdd (SP, FP, R0)
+        ; (* We read the value pointed by SP (old FP) into FP. *)
+          TLoad (FP, SP)
+        ; (* We let SP point to the return address. *)
+          TSub (SP, SP, R1)
+        ; (* We read the value pointed by SP (ret address) into [PrivateReg]. *)
+          TLoad (PrivateReg, SP)
+        ; (* We restore SP to the original state before the call. *)
+          TSub (SP, SP, R1)
+        ; (* We jump to the return address. *)
+          TJmpAddr (None, PrivateReg) ]
 
 let pre_encode_instr data_sections f =
   let prog_sections, prog_label_mapping =
     split_by_label
       (fun l ->
         match SMap.find_opt l.v data_sections.data_label_mapping with
-        | None -> ProgramLabel.fresh l.v l.pos
+        | None ->
+            ProgramLabel.fresh l.v l.pos
         | Some lbl ->
             let txt =
               Format.asprintf
@@ -246,13 +262,13 @@ let pre_encode_instr data_sections f =
                  : %a"
                 l.v pp_pos (DataLabel.position lbl)
             in
-            error txt l.pos)
+            error txt l.pos )
       f.text
   in
   match SMap.find_opt "main" prog_label_mapping with
   | None ->
-      file_warning "No label 'main' found, skipping all instructions.";
-      { prog_sections = Monoid.empty; prog_label_mapping = SMap.empty }
+      file_warning "No label 'main' found, skipping all instructions." ;
+      {prog_sections= Monoid.empty; prog_label_mapping= SMap.empty}
   | Some mainid ->
       let used_prog_lbl, used_mem_lbl, prog_sections =
         Monoid.fold_left
@@ -267,19 +283,23 @@ let pre_encode_instr data_sections f =
                   let acc = Monoid.(acc @@ a) in
                   let pls =
                     match pl with
-                    | None -> pls
-                    | Some pl -> ProgramLabel.Set.add pl pls
+                    | None ->
+                        pls
+                    | Some pl ->
+                        ProgramLabel.Set.add pl pls
                   in
                   let dls =
                     match dl with
-                    | None -> dls
-                    | Some dl -> DataLabel.Set.add dl dls
+                    | None ->
+                        dls
+                    | Some dl ->
+                        DataLabel.Set.add dl dls
                   in
-                  (pls, dls, acc))
+                  (pls, dls, acc) )
                 (pls, dls, Monoid.empty) insts
             in
-            let new_sec = { label; body; pos = instr_sec.pos } in
-            (pls, dls, Monoid.(acc @@ of_elm new_sec)))
+            let new_sec = {label; body; pos= instr_sec.pos} in
+            (pls, dls, Monoid.(acc @@ of_elm new_sec)) )
           (ProgramLabel.Set.empty, DataLabel.Set.empty, Monoid.empty)
           prog_sections
       in
@@ -299,11 +319,11 @@ let pre_encode_instr data_sections f =
       SMap.iter
         (fun label lbl_id ->
           let txt = Format.asprintf "The program label %s is not used." label in
-          warning txt (ProgramLabel.position lbl_id))
-        unused_prog_label;
+          warning txt (ProgramLabel.position lbl_id) )
+        unused_prog_label ;
       SMap.iter
         (fun label lbl_id ->
           let txt = Format.asprintf "The data label %s is not used." label in
-          warning txt (DataLabel.position lbl_id))
-        unused_mem_label;
-      { prog_sections; prog_label_mapping }
+          warning txt (DataLabel.position lbl_id) )
+        unused_mem_label ;
+      {prog_sections; prog_label_mapping}

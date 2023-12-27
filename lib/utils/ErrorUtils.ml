@@ -19,11 +19,11 @@ let pp_severity color ppf severity =
   Format.fprintf ppf "\x1b[1;%sm%s\x1b[0m" color severity
 
 let error txt (pos : PositionUtils.position) =
-  Format.eprintf "%a@.%a: %s@." pp_error_head pos (pp_severity "31") "Error" txt;
+  Format.eprintf "%a@.%a: %s@." pp_error_head pos (pp_severity "31") "Error" txt ;
   exit 1
 
 let file_error txt =
-  Format.eprintf "%a: %s@." (pp_severity "31") "Error" txt;
+  Format.eprintf "%a: %s@." (pp_severity "31") "Error" txt ;
   exit 1
 
 let warning txt (pos : PositionUtils.position) =
@@ -38,12 +38,18 @@ let file_warning txt =
 
 let rec pp_slist f ppf l =
   match l with
-  | [] -> ()
-  | [ x; y ] -> Format.fprintf ppf "%s and %s" (f x) (f y)
-  | hd :: tl -> Format.fprintf ppf "%s, %a" (f hd) (pp_slist f) tl
+  | [] ->
+      ()
+  | [x; y] ->
+      Format.fprintf ppf "%s and %s" (f x) (f y)
+  | hd :: tl ->
+      Format.fprintf ppf "%s, %a" (f hd) (pp_slist f) tl
 
 let pp_slist f ppf l =
   match l with
-  | [] -> Format.pp_print_string ppf ""
-  | [ x ] -> Format.pp_print_string ppf (f x)
-  | l -> pp_slist f ppf l
+  | [] ->
+      Format.pp_print_string ppf ""
+  | [x] ->
+      Format.pp_print_string ppf (f x)
+  | l ->
+      pp_slist f ppf l

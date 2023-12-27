@@ -2,20 +2,20 @@ open Integers
 open Isa
 open PositionUtils
 
+(** A immediate with a position *)
 type immediate = Immediate.t pos
-(** A immediate with a position *)
 
+(** A immediate with a position *)
 type program_address = ProgramAddress.t pos
-(** A immediate with a position *)
 
+(** A immediate with a position *)
 type offset = Offset.t pos
-(** A immediate with a position *)
 
-type label = string pos
 (** A string with a position *)
+type label = string pos
 
-type reg = Isa.reg pos
 (** Available Registers *)
+type reg = Isa.reg pos
 
 (** Possible color of the text *)
 type color =
@@ -62,8 +62,8 @@ type text =
   | Style of text_style * text
   | Text of string
 
-type inst = inst_kind pos
 (** All possible instructions *)
+type inst = inst_kind pos
 
 and inst_kind =
   | AstNop (* Pseudo instr *)
@@ -106,13 +106,10 @@ and inst_kind =
   | AstCallAddr of reg (* Pseudo instr *)
   | AstRet (* Pseudo instr *)
 
-type data = data_kind pos
 (** All possible data *)
+type data = data_kind pos
 
 and data_kind = Str of text | Int of immediate
 
-type file = {
-  text : (label option * inst) list;
-  data : (label option * data) list;
-}
 (** An assembly file, with its data and its text sections. *)
+type file = {text: (label option * inst) list; data: (label option * data) list}
