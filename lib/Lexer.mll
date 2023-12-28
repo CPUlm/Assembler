@@ -25,10 +25,10 @@ let resolve_instruction =
           ("store",STORE);
           ("loadi",LOADI);
           ("jmp",JMP);
-          ("jmp.z",JMPC Ast.Zero);
-          ("jmp.n",JMPC Ast.Negative);
-          ("jmp.c",JMPC Ast.UnsignedUnderflowFlag);
-          ("jmp.v",JMPC Ast.SignedOverflowFlag);
+          ("jmp.z",JMPC Isa.Zero);
+          ("jmp.n",JMPC Isa.Negative);
+          ("jmp.c",JMPC Isa.UnsignedUnderflowFlag);
+          ("jmp.v",JMPC Isa.SignedOverflowFlag);
           ("nop",NOP);
           ("neg",NEG);
           ("not",NOT);
@@ -63,7 +63,6 @@ let resolve_directive =
           (".data", DATA);
           (".string", STRING);
           (".zstring", ZSTRING);
-          (".uint", UINT);
           (".int", INT);
           (".include",INCLUDE)
         ]
@@ -197,4 +196,3 @@ and string_lex = parse
 
     | _ as c
       { Buffer.add_char string_buffer c; string_lex lexbuf }
-

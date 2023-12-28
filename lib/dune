@@ -7,4 +7,5 @@
  (modules Lexer))
 
 (menhir
- (modules Parser))
+ (modules Parser)
+ (flags --unused-token INCLUDE))
