@@ -5,22 +5,20 @@ let _ =
 (** First possible address : 0 *)
 let first_address = 0
 
-(** First possible address : 2^32 - 1 *)
-let last_address = (1 lsl 32) - 1
+(** First possible address : 2^32 - 1 = 0xffffffff*)
+let last_address = 0xffffffff
 
-let is_uint16 =
-  let two_16 = 1 lsl 16 in
-  fun i -> 0 <= i && i < two_16
+(** [is_uint16 i] tests if i in [\[0; 2^16 - 1\]]
+    with [2^16 - 1 = 0xffff] *)
+let is_uint16 i = 0 <= i && i <= 0xffff
 
-let is_int24 =
-  let two_23 = 1 lsl 23 in
-  let neg_two_23 = -two_23 in
-  fun i -> neg_two_23 <= i && i < two_23
+(** [is_int24 i] tests if i in [\[-2^23; 2^23 - 1\]],
+    with [-2^23 = -0x800000] and [2^23 - 1 = 0x7fffff]*)
+let is_int24 i = -0x800000 <= i && i <= 0x7fffff
 
-let is_int32 =
-  let two_31 = 1 lsl 31 in
-  let neg_two_31 = -(1 lsl 31) in
-  fun i -> neg_two_31 <= i && i < two_31
+(** [is_int32 i] tests if i in [\[-2^31; 2^31 - 1\]],
+    with [-2^31 = -0x80000000] and [2^31 - 1 = 0x7fffffff]*)
+let is_int32 i = -0x80000000 <= i && i < 0x7fffffff
 
 let is_uint32 i = 0 <= i && i <= last_address
 
@@ -64,9 +62,7 @@ module UInt16 = struct
 
   type res = Single of t | Multiple of {low: t; high: t}
 
-  let two_16 = Int32.(shift_left one 16)
-
-  let is_uint16 imm = 0l <= imm && imm < two_16
+  let is_uint16 imm = 0l <= imm && imm <= 0xffffl
 
   let zero = 0l
 
