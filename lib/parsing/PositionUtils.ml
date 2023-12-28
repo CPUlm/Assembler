@@ -3,7 +3,7 @@ type position =
 
 type 'a pos = {v: 'a; pos: position}
 
-let mk_pos pos x = {v= x; pos}
+let mk_pos pos v = {v; pos}
 
 (** Convert the [$loc] of menhir to a position. *)
 let lexloc_to_pos (pos : Lexing.position * Lexing.position) =
@@ -36,3 +36,5 @@ let merge_pos p1 p2 =
 let eof_pos lexbuf =
   let pos = lexbuf_to_pos lexbuf in
   {pos with end_col= -1; beg_col= -1}
+
+let dummy_pos = {beg_col= -1; beg_line= -1; end_col= -1; end_line= -1; file= ""}

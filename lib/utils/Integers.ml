@@ -176,6 +176,8 @@ module type Address = sig
 
   val well_defined : t -> Offset.t -> bool
 
+  val to_word : t -> Word.t
+
   val pp : Format.formatter -> t -> unit
 
   val is_after : t -> t -> bool
@@ -211,6 +213,8 @@ module Address = struct
   let with_offset addr offs = of_int (addr + offs)
 
   let well_defined addr offs = Option.is_some (with_offset addr offs)
+
+  let to_word a = Int32.of_int a
 
   let pp ppf t = Format.fprintf ppf "%x" t
 

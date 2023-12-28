@@ -62,18 +62,18 @@ let process_load_label data_sections prog_labels l =
   | None ->
       check_prog_label prog_labels l |> Either.right
 
-let compile_load instr r1 int16 r2 =
+let compile_load pos r1 int16 r2 =
   let r2 = match r2 with Some r -> r | None -> R0 in
   match int16 with
   | UInt16.Single imm ->
       let i = TLoadImmediateAdd (r1, imm, LowHalf, r2) in
-      Monoid.of_elm (mk_pos instr.pos i)
+      Monoid.of_elm (mk_pos pos i)
   | UInt16.Multiple i ->
       let l =
         [ TLoadImmediateAdd (r1, i.low, LowHalf, r2)
         ; TLoadImmediateAdd (r1, i.high, HighHalf, r1) ]
       in
-      Monoid.of_list (List.map (mk_pos instr.pos) l)
+      Monoid.of_list (List.map (mk_pos pos) l)
 
 (** [process_instr data_sections prog_labels instr] : Check that the instruction
        is wellformed and return a siplified version of it, with the program label
@@ -176,7 +176,7 @@ let process_instr data_sections prog_labels instr =
             None
       in
       let imm = IntConstant.to_uint16 imm.v in
-      (compile_load instr r1 imm r2, None, None)
+      (compile_load instr.pos r1 imm r2, None, None)
   | AstLoadImmediateAddLabel (r1, label, r2) -> (
       let r1 = check_writable_reg r1 in
       let r2 =
@@ -191,7 +191,7 @@ let process_instr data_sections prog_labels instr =
           let addr =
             DataLabel.Map.find data_lid data_sections.data_label_position
           in
-          let l = compile_load instr r1 (MemoryAddress.to_uint16 addr) r2 in
+          let l = compile_load instr.pos r1 (MemoryAddress.to_uint16 addr) r2 in
           (l, None, Some data_lid)
       | Right lid ->
           let i = TLoadProgLabelAdd (r1, lid, r2) in
@@ -243,11 +243,52 @@ let process_instr data_sections prog_labels instr =
         ; (* We jump to the return address. *)
           TJmpRegister (None, PrivateReg) ]
 
-let pre_encode_instr data_sections f =
+let head_of_program sp_addr fp_addr main_lbl =
+  (* Load the stack address in SP *)
+  let sp_load =
+    compile_load dummy_pos SP (MemoryAddress.to_uint16 sp_addr) None
+  in
+  (* Load the frame address in FP *)
+  let fp_load =
+    compile_load dummy_pos FP (MemoryAddress.to_uint16 fp_addr) None
+  in
+  (* Jump to the label main *)
+  let jmp_main =
+    Monoid.of_elm (mk_pos dummy_pos (TJmpLabel (None, main_lbl)))
+  in
+  (* Dummy label corresponding to the head of the program *)
+  let label = ProgramLabel.fresh "" dummy_pos in
+  (* Body of this section *)
+  let body = Monoid.(sp_load @@ fp_load @@ jmp_main) in
+  {label; body; pos= dummy_pos}
+
+let init_stack data_file =
+  let stack = Monoid.of_list [ProgramAddress.(to_word last); Word.zero] in
+  let fp_addr =
+    match MemoryAddress.next data_file.data_next_address with
+    | Some a ->
+        a
+    | None ->
+        file_error "Memory full, unable to setup the stack."
+  in
+  let sp_addr =
+    match MemoryAddress.next fp_addr with
+    | Some a ->
+        a
+    | None ->
+        file_error "Memory full, unable to setup the stack."
+  in
+  ( { data_file with
+      data_bytes= Monoid.(data_file.data_bytes @@ stack)
+    ; data_next_address= sp_addr }
+  , sp_addr
+  , fp_addr )
+
+let pre_encode_instr data_file f =
   let prog_sections, prog_label_mapping =
     split_by_label
       (fun l ->
-        match SMap.find_opt l.v data_sections.data_label_mapping with
+        match SMap.find_opt l.v data_file.data_label_mapping with
         | None ->
             ProgramLabel.fresh l.v l.pos
         | Some lbl ->
@@ -263,8 +304,12 @@ let pre_encode_instr data_sections f =
   match SMap.find_opt "main" prog_label_mapping with
   | None ->
       file_warning "No label 'main' found, skipping all instructions." ;
-      {prog_sections= Monoid.empty; prog_label_mapping= SMap.empty}
+      (data_file, {prog_sections= Monoid.empty; prog_label_mapping= SMap.empty})
   | Some mainid ->
+      (* Initialise the stack *)
+      let data_file, sp_addr, fp_addr = init_stack data_file in
+      (* Header of the program (init SP, FP and PC via a jump) *)
+      let prog_header = head_of_program sp_addr fp_addr mainid in
       let used_prog_lbl, used_mem_lbl, prog_sections =
         Monoid.fold_left
           (fun (pls, dls, acc) instr_sec ->
@@ -273,7 +318,7 @@ let pre_encode_instr data_sections f =
               Monoid.fold_left
                 (fun (pls, dls, acc) i ->
                   let a, pl, dl =
-                    process_instr data_sections prog_label_mapping i
+                    process_instr data_file prog_label_mapping i
                   in
                   let acc = Monoid.(acc @@ a) in
                   let pls =
@@ -295,7 +340,9 @@ let pre_encode_instr data_sections f =
             in
             let new_sec = {label; body; pos= instr_sec.pos} in
             (pls, dls, Monoid.(acc @@ of_elm new_sec)) )
-          (ProgramLabel.Set.empty, DataLabel.Set.empty, Monoid.empty)
+          ( ProgramLabel.Set.empty
+          , DataLabel.Set.empty
+          , Monoid.of_elm prog_header )
           prog_sections
       in
       (* Mark main label as used to avoid useless warnings about it. It it always
@@ -309,7 +356,7 @@ let pre_encode_instr data_sections f =
       let unused_mem_label =
         SMap.filter
           (fun _ lid -> DataLabel.Set.mem lid used_mem_lbl |> not)
-          data_sections.data_label_mapping
+          data_file.data_label_mapping
       in
       SMap.iter
         (fun label lbl_id ->
@@ -321,4 +368,4 @@ let pre_encode_instr data_sections f =
           let txt = Format.asprintf "The data label %s is not used." label in
           warning txt (DataLabel.position lbl_id) )
         unused_mem_label ;
-      {prog_sections; prog_label_mapping}
+      (data_file, {prog_sections; prog_label_mapping})

@@ -41,7 +41,9 @@ let () =
   try
     let file = Parser.file PostLexer.next_token lexbuf in
     let data_file = EncodeData.encode_data file in
-    let pre_encode_instr = ProcessInstruction.pre_encode_instr data_file file in
+    let data_file, pre_encode_instr =
+      ProcessInstruction.pre_encode_instr data_file file
+    in
     let label_estim = EstimateLabel.estimate_labels pre_encode_instr in
     let pos_instr =
       PositionInstruction.position_instrs label_estim pre_encode_instr

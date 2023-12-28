@@ -109,6 +109,9 @@ module type Address = sig
   val well_defined : t -> Offset.t -> bool
   (** [with_offset addr off] checks if the address [addr + off] is well-defined. *)
 
+  val to_word : t -> Word.t
+  (** Convert the address to a machine word *)
+
   val pp : Format.formatter -> t -> unit
   (** Pretty print the address *)
 
