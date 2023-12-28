@@ -37,10 +37,10 @@ type color =
   | BrightWhite
 
 (** [default_text_color] : Default Text Color *)
-let default_text_color = Black
+let default_text_color = White
 
 (** [default_background_color] : Default Background Color *)
-let default_background_color = White
+let default_background_color = Black
 
 (** Style of the text *)
 type text_style =
