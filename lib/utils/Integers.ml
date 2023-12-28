@@ -130,8 +130,8 @@ module Offset = struct
   let pp ppf t = Format.fprintf ppf "%d" t
 end
 
-(** Module type of an immediate value in the program, ie. a 32bit constant. *)
-module type Immediate = sig
+(** Module type of an integer value in the program or the data, ie. a 32bit constant. *)
+module type IntConstant = sig
   type t
 
   val of_int : int -> t option
@@ -144,7 +144,7 @@ module type Immediate = sig
   (** Convert it to a word *)
 end
 
-module Immediate = struct
+module IntConstant = struct
   type t = int
 
   let of_int i = if is_int32 i || is_uint32 i then Some i else None

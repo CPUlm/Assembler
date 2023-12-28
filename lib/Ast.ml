@@ -3,7 +3,7 @@ open Isa
 open PositionUtils
 
 (** A immediate with a position *)
-type immediate = Immediate.t pos
+type immediate = IntConstant.t pos
 
 (** A immediate with a position *)
 type program_address = ProgramAddress.t pos

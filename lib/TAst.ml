@@ -35,7 +35,7 @@ and tinstr_kind =
   | TCallAddr of reg
   | TCallLabel of ProgramLabel.t
 
-type data = TString of (int * Word.t Monoid.t) | TInt of Immediate.t
+type data = TString of (int * Word.t Monoid.t) | TInt of IntConstant.t
 
 type instr_section =
   {label: ProgramLabel.t; body: tinstr Monoid.t; pos: position}

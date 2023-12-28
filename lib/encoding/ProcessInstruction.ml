@@ -175,7 +175,7 @@ let process_instr data_sections prog_labels instr =
         | None ->
             None
       in
-      let imm = Immediate.to_uint16 imm.v in
+      let imm = IntConstant.to_uint16 imm.v in
       (compile_load instr r1 imm r2, None, None)
   | AstLoadImmediateAddLabel (r1, label, r2) -> (
       let r1 = check_writable_reg r1 in

@@ -125,7 +125,7 @@ let mk_style_text =
 
 let mk_imm loc i =
   let pos = lexloc_to_pos loc in
-  match Immediate.of_int i with
+  match IntConstant.of_int i with
   | Some i ->
       mk_pos pos i
   | None ->

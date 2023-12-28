@@ -60,8 +60,8 @@ end
 (** Offsets in the program *)
 module Offset : Offset
 
-(** Module type of an immediate value in the program, ie. a 32bit constant. *)
-module type Immediate = sig
+(** Module type of an integer value in the program or the data, ie. a 32bit constant. *)
+module type IntConstant = sig
   type t
 
   val of_int : int -> t option
@@ -74,8 +74,8 @@ module type Immediate = sig
   (** Convert it to a word *)
 end
 
-(** Immediates in the program *)
-module Immediate : Immediate
+(** Integer constant *)
+module IntConstant : IntConstant
 
 (** A 32bit address in the program *)
 module type Address = sig

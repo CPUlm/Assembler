@@ -64,7 +64,7 @@ let encode_section sec =
         | TString (size, str) ->
             (cur_pos + size, Monoid.(data @@ str))
         | TInt imm ->
-            let b = Immediate.to_word imm in
+            let b = IntConstant.to_word imm in
             (cur_pos + 1, Monoid.(data @@ of_elm b)) )
       (0, Monoid.empty) sec
   in
