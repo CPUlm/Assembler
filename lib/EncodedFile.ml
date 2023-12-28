@@ -5,12 +5,14 @@ open ErrorUtils
 type data_file =
   { data_bytes: Word.t Monoid.t
   ; data_label_mapping: DataLabel.t SMap.t
-  ; data_label_position: MemoryAddress.t DataLabel.map }
+  ; data_label_position: MemoryAddress.t DataLabel.map
+  ; data_next_address: MemoryAddress.t }
 
 type instr_file =
   { instr_bytes: Word.t Monoid.t
   ; instr_label_mapping: ProgramLabel.t SMap.t
-  ; instr_label_position: ProgramAddress.t ProgramLabel.map }
+  ; instr_label_position: ProgramAddress.t ProgramLabel.map
+  ; instr_next_address: ProgramAddress.t }
 
 let write_data_file filename dfile =
   ( if Sys.file_exists filename then

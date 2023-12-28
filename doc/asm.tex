@@ -8,6 +8,8 @@
 \usepackage[french]{babel}
 
 \usepackage[indent]{parskip}
+\usepackage{multicol}
+\usepackage{multirow}
 \usepackage{amssymb}
 \usepackage{calc}
 \usepackage{enumitem}
@@ -98,16 +100,25 @@ mots de $32$ bits.
 
 \begin{figure}[htp]
       \begin{center}
-            \vspace{0.5cm}% Parceque la taille des truc penchés n'est pas hyper bien calculée
+            \vspace{0.5cm}% Parce que la taille des truc penchés n'est pas hyper bien calculée
             \begin{bytefield}[bitwidth=0.03\textwidth]{32}
-                  \bitlabel{16}{}
-                  & \bitlabel{1}{Bold} & \bitlabel{1}{Faint}
-                  & \bitlabel{1}{Italic} & \bitlabel{1}{Underline}
-                  & \bitlabel{1}{Blinking} & \bitlabel{1}{Hide}
-                  & \bitlabel{1}{Crossed} & \bitlabel{1}{Overline} \\
-                  \bitheader{0,6-8,11,12,15-24,31} \\
-                  \bitbox{7}{Code ASCII} & \bitbox{1}{0} & \bitbox{4}{FG} &
-                  \bitbox{4}{BG} & \bitbox{8}{Style} & \bitbox{8}{0}
+                  \bitlabel{6}{} &
+                  \bitlabel{1}{Overline} &
+                  \bitlabel{1}{Crossed} &
+                  \bitlabel{1}{Hide} &
+                  \bitlabel{1}{Blinking} &
+                  \bitlabel{1}{Underline} &
+                  \bitlabel{1}{Italic} &
+                  \bitlabel{1}{Faint} &
+                  \bitlabel{1}{Bold}
+                  \\
+                  \bitheader[endianness=big]{0,6-8,12,13,17-26,31} \\
+                  \bitbox{6}{0} &
+                  \bitbox{8}{Style} &
+                  \bitbox{5}{BG} &
+                  \bitbox{5}{FG} &
+                  \bitbox{1}{0} &
+                  \bitbox{7}{Code ASCII}
             \end{bytefield}
       \end{center}
       \caption{Encodage d'un caractère.}
@@ -126,18 +137,27 @@ Avec :
 \renewcommand{\arraystretch}{1.1}
 \begin{table}[htp]
       \begin{center}
-            \begin{tabular}{clcp{1em}clc}
+            \begin{tabular}{clp{1.5em}}
                   \toprule
-                  Identifiant & Nom     &                                   &  & Identifiant & Nom           &                                          \\
+                  Identifiant & Nom           &                            \\
                   \midrule
-                  0           & Noir    & \cellcolor{black}\hspace{1.5em}   &  & 8           & Noir Clair    & \cellcolor{bright_black}\hspace{1.5em}   \\
-                  1           & Rouge   & \cellcolor{red}\hspace{1.5em}     &  & 9           & Rouge Clair   & \cellcolor{bright_red}\hspace{1.5em}     \\
-                  2           & Vert    & \cellcolor{green}\hspace{1.5em}   &  & 10          & Vert Clair    & \cellcolor{bright_green}\hspace{1.5em}   \\
-                  3           & Jaune   & \cellcolor{yellow}\hspace{1.5em}  &  & 11          & Jaune Clair   & \cellcolor{bright_yellow}\hspace{1.5em}  \\
-                  4           & Bleu    & \cellcolor{blue}\hspace{1.5em}    &  & 12          & Bleu Clair    & \cellcolor{bright_blue}\hspace{1.5em}    \\
-                  5           & Magenta & \cellcolor{magenta}\hspace{1.5em} &  & 13          & Magenta Clair & \cellcolor{bright_magenta}\hspace{1.5em} \\
-                  6           & Cyan    & \cellcolor{cyan}\hspace{1.5em}    &  & 14          & Cyan Clair    & \cellcolor{bright_cyan}\hspace{1.5em}    \\
-                  7           & Blanc   & \cellcolor{white}\hspace{1.5em}   &  & 15          & Blanc Clair   & \cellcolor{bright_white}\hspace{1.5em}   \\
+                  0           & Noir          & \cellcolor{black}          \\
+                  1           & Rouge         & \cellcolor{red}            \\
+                  2           & Vert          & \cellcolor{green}          \\
+                  3           & Jaune         & \cellcolor{yellow}         \\
+                  4           & Bleu          & \cellcolor{blue}           \\
+                  5           & Magenta       & \cellcolor{magenta}        \\
+                  6           & Cyan          & \cellcolor{cyan}           \\
+                  7           & Blanc         & \cellcolor{white}          \\
+                  8           & Noir Clair    & \cellcolor{bright_black}   \\
+                  9           & Rouge Clair   & \cellcolor{bright_red}     \\
+                  10          & Vert Clair    & \cellcolor{bright_green}   \\
+                  11          & Jaune Clair   & \cellcolor{bright_yellow}  \\
+                  12          & Bleu Clair    & \cellcolor{bright_blue}    \\
+                  13          & Magenta Clair & \cellcolor{bright_magenta} \\
+                  14          & Cyan Clair    & \cellcolor{bright_cyan}    \\
+                  15          & Blanc Clair   & \cellcolor{bright_white}   \\
+                  16          & Défaut        &                            \\
                   \bottomrule
             \end{tabular}
       \end{center}

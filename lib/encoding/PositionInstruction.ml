@@ -257,7 +257,7 @@ let position_section labels_pos begin_addr sec =
   (next_addr, instrs, addr2check)
 
 let position_instrs estim_labels prog =
-  let a2c, pprog_label_position, next_addr, pprog_instrs =
+  let a2c, pprog_label_position, pprog_next_address, pprog_instrs =
     Monoid.fold_left
       (fun (a2c, label_map, curr_addr, p_instrs) sec ->
         let next_addr, instrs, addr2check =
@@ -277,15 +277,16 @@ let position_instrs estim_labels prog =
   in
   ProgramAddress.Map.iter
     (fun addr pos ->
-      if ProgramAddress.is_after addr next_addr then
+      if ProgramAddress.is_after addr pprog_next_address then
         let txt =
           Format.asprintf
             "The address we jump at, %a, is not in the program. The program \
              instructions ends at %a."
-            ProgramAddress.pp addr ProgramAddress.pp next_addr
+            ProgramAddress.pp addr ProgramAddress.pp pprog_next_address
         in
         warning txt pos )
     a2c ;
   { pprog_instrs
   ; pprog_label_mapping= prog.prog_label_mapping
-  ; pprog_label_position }
+  ; pprog_label_position
+  ; pprog_next_address }

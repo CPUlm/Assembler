@@ -65,4 +65,5 @@ let fill_instruction pprog =
   in
   { fprog_instrs
   ; fprog_label_mapping= pprog.pprog_label_mapping
-  ; fprog_label_position= pprog.pprog_label_position }
+  ; fprog_label_position= pprog.pprog_label_position
+  ; fprog_next_address= pprog.pprog_next_address }

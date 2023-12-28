@@ -88,7 +88,8 @@ let str_to_col =
     ; ("brightblue", BrightBlue)
     ; ("brightmagenta", BrightMagenta)
     ; ("brightcyan", BrightCyan)
-    ; ("brightwhite", BrightWhite) ] ;
+    ; ("brightwhite", BrightWhite)
+    ; ("default", Default) ] ;
   fun loc s ->
     match Hashtbl.find_opt colors s with
     | Some c ->
@@ -97,6 +98,30 @@ let str_to_col =
         let pos = lexloc_to_pos loc in
         let txt = Format.sprintf "Unknown color '%s'." s in
         ErrorUtils.error txt pos
+
+type parsed_text =
+  | Concat of parsed_text * parsed_text
+  | TextColor of color * parsed_text
+  | BackColor of color * parsed_text
+  | Style of text_style * parsed_text
+  | Text of string
+
+let rec mk_style_text tc bc sts = function
+  | Concat (t1, t2) ->
+      AstConcat (mk_style_text tc bc sts t1, mk_style_text tc bc sts t2)
+  | TextColor (col, t) ->
+      mk_style_text col bc sts t
+  | BackColor (col, t) ->
+      mk_style_text tc col sts t
+  | Style (Default, t) ->
+      mk_style_text tc bc StyleSet.empty t
+  | Style (s, t) ->
+      mk_style_text tc bc (StyleSet.add s sts) t
+  | Text t ->
+      AstText {text= t; style= sts; text_color= tc; back_color= bc}
+
+let mk_style_text =
+  mk_style_text default_text_color default_background_color StyleSet.empty
 
 let mk_imm loc i =
   let pos = lexloc_to_pos loc in

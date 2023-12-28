@@ -113,8 +113,8 @@ styled_string:
   | DEFAULT LPAR t=styled_string RPAR               { Style (Default,t)  }
 
 data_without_label:
-  | STRING s=styled_string  { mk_pos $loc (Str s) }
-  | ZSTRING s=styled_string { mk_pos $loc (Str (Concat (s, Text "\000"))) }
+  | STRING s=styled_string  { let txt = mk_style_text s in mk_pos $loc (Str txt) }
+  | ZSTRING s=styled_string { let txt = mk_style_text (Concat (s, Text "\000")) in mk_pos $loc (Str txt) }
   | INT i=imm               { mk_pos $loc (Int i) }
 
 data:

@@ -196,4 +196,3 @@ and string_lex = parse
 
     | _ as c
       { Buffer.add_char string_buffer c; string_lex lexbuf }
-
