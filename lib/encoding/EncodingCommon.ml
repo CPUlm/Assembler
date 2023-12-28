@@ -211,7 +211,7 @@ let encode_imm (pos, v) imm16 =
 
 let encode_loadmode (pos, v) mode =
   let loadmode_size = 1 in
-  let c = match mode with LowHalf -> Int32.zero | HighHalf -> Int32.one in
+  let c = match mode with LowHalf -> Int32.one | HighHalf -> Int32.zero in
   (pos + loadmode_size, Word.add_at v c pos)
 
 let encode_flag (pos, v) flag =
