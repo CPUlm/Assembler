@@ -140,7 +140,7 @@ let label_jump_kind labels_pos acc label =
   (* We compute the offset between now and the pseudo address. This offset is:
      - Exact if negative (because pseudo_addr is exact if [ofs] < 0)
      - If positive its >= than the exact one. *)
-  let ofs = ProgramAddress.diff (current_address acc) pseudo_addr in
+  let ofs = ProgramAddress.offset_from_to (current_address acc) pseudo_addr in
   (* so we just check that we can jump at it in one operation jmpi *)
   if Offset.fit_in_int24 ofs then (* We can, 1 operation needed *)
     (1, None)
@@ -212,9 +212,9 @@ let position_section labels_pos begin_addr sec =
             let _, jump_kind = label_jump_kind labels_pos acc label in
             let acc = jump_label acc label f jump_kind in
             (acc, a2c)
-        | TJmpAddr (None, r1) ->
+        | TJmpRegister (None, r1) ->
             incr_and_ret accc (Jmp r1)
-        | TJmpAddr (Some f, r1) ->
+        | TJmpRegister (Some f, r1) ->
             incr_and_ret accc (JmpCond (r1, f))
         | TJmpOffset (f, offset) ->
             ( if not (ProgramAddress.well_defined (current_address acc) offset.v)
@@ -232,9 +232,9 @@ let position_section labels_pos begin_addr sec =
                 warning txt offset.pos ) ;
             let acc, target_addr = jump_offset acc offset.v f in
             (acc, ProgramAddress.Map.add target_addr offset.pos a2c)
-        | TJmpImmediate (f, target_addr) ->
+        | TJmpAddress (f, target_addr) ->
             let offset =
-              ProgramAddress.diff (current_address acc) target_addr.v
+              ProgramAddress.offset_from_to (current_address acc) target_addr.v
             in
             let acc, _ = jump_offset acc offset f in
             (acc, ProgramAddress.Map.add target_addr.v target_addr.pos a2c)

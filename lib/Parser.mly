@@ -81,10 +81,10 @@ inst_without_label:
   | STORE r1=reg r2=reg               { mk_pos $loc (AstStore (r1, r2)) }
   | MOV r1=reg r2=reg                 { mk_pos $loc (AstMov (r1, r2)) }
   | TEST r=reg                        { mk_pos $loc (AstTest r) }
-  | f=jmp i=prog_addr                 { mk_pos $loc (AstJmpImmediate (f, i)) }
+  | f=jmp i=prog_addr                 { mk_pos $loc (AstJmpAddress (f, i)) }
   | f=jmp o=offs                      { mk_pos $loc (AstJmpOffset (f, o)) }
   | f=jmp l=lbl                       { mk_pos $loc (AstJmpLabel (f, l)) }
-  | f=jmp r=reg                       { mk_pos $loc (AstJmpAddr (f, r)) }
+  | f=jmp r=reg                       { mk_pos $loc (AstJmpRegister (f, r)) }
   | HALT                              { mk_pos $loc AstHalt }
   | CALL r=reg                        { mk_pos $loc (AstCallAddr r) }
   | CALL l=lbl                        { mk_pos $loc (AstCallLabel l) }

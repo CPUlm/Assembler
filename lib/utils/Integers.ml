@@ -149,7 +149,7 @@ module IntConstant = struct
 
   let of_int i = if is_int32 i || is_uint32 i then Some i else None
 
-  let to_uint16 i = UInt16.of_int32 (Int32.of_int i) (* TODO : Check This ! *)
+  let to_uint16 i = UInt16.of_int32 (Int32.of_int i)
 
   let to_word i = Int32.of_int i
 end
@@ -170,7 +170,7 @@ module type Address = sig
 
   val fit_in_uint16 : t -> int -> bool
 
-  val diff : t -> t -> Offset.t
+  val offset_from_to : t -> t -> Offset.t
 
   val with_offset : t -> Offset.t -> t
 
@@ -205,7 +205,8 @@ module Address = struct
   let fit_in_uint16 t i =
     match of_int (t + i) with Some i -> is_uint16 i | None -> false
 
-  let diff a1 a2 = a1 - a2
+  (** [offset_from_to a1 a2] returns an offset [o] such as [a1 + o = a2]*)
+  let offset_from_to a1 a2 = a2 - a1
 
   (** Note: The normalization of the address is implementations defined.
        Here we take the address modulo (first_address - last_address).

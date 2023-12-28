@@ -211,21 +211,16 @@ let process_instr data_sections prog_labels instr =
       let lid = check_prog_label prog_labels label in
       let m = Monoid.of_elm (mk_pos instr.pos (TJmpLabel (f, lid))) in
       (m, Some lid, None)
-  | AstJmpAddr (f, r1) ->
+  | AstJmpRegister (f, r1) ->
       let r1 = check_readable_register r1 in
-      return instr (TJmpAddr (f, r1))
+      return instr (TJmpRegister (f, r1))
   | AstJmpOffset (f, imm) ->
       return instr (TJmpOffset (f, imm))
-  | AstJmpImmediate (f, imm) ->
-      return instr (TJmpImmediate (f, imm))
+  | AstJmpAddress (f, imm) ->
+      return instr (TJmpAddress (f, imm))
   | AstHalt ->
-      (* We set [PrivateReg] to the last address *)
-      let l =
-        compile_load instr PrivateReg ProgramAddress.(to_uint16 last) None
-      in
-      (* And we jump *)
-      let j = Monoid.of_elm (mk_pos instr.pos (TJmpAddr (None, PrivateReg))) in
-      (Monoid.(l @@ j), None, None)
+      let addr = {v= ProgramAddress.last; pos= instr.pos} in
+      return instr (TJmpAddress (None, addr))
   | AstCallAddr r1 ->
       let r1 = check_readable_register r1 in
       return instr (TCallAddr r1)
@@ -246,7 +241,7 @@ let process_instr data_sections prog_labels instr =
         ; (* We restore SP to the original state before the call. *)
           TSub (SP, SP, R1)
         ; (* We jump to the return address. *)
-          TJmpAddr (None, PrivateReg) ]
+          TJmpRegister (None, PrivateReg) ]
 
 let pre_encode_instr data_sections f =
   let prog_sections, prog_label_mapping =

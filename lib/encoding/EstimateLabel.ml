@@ -97,11 +97,11 @@ let max_section_end_addr lbl_map start_addr sec =
         (* Flow instructions *)
         | TJmpLabel (_, lbl) ->
             jump_address acc (ProgramLabel.Map.find_opt lbl lbl_map)
-        | TJmpAddr _ ->
+        | TJmpRegister _ ->
             atomic_op acc
         | TJmpOffset (_, offset) ->
             jump_offset acc offset.v
-        | TJmpImmediate (_, prog_addr) ->
+        | TJmpAddress (_, prog_addr) ->
             jump_address acc (Some prog_addr.v)
         (* Function Call *)
         | TCallAddr _ ->

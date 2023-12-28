@@ -51,7 +51,7 @@ let fill_instruction pprog =
               let target_addr =
                 ProgramLabel.Map.find lbl pprog.pprog_label_position
               in
-              let ofs = ProgramAddress.diff addr target_addr in
+              let ofs = ProgramAddress.offset_from_to addr target_addr in
               match Offset.to_int24 ofs with
               | Some ofs -> (
                 match flag with

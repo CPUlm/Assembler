@@ -102,9 +102,9 @@ and inst_kind =
   (* Flow instructions *)
   | AstTest of reg (* Pseudo instr *)
   | AstJmpLabel of flag option * label (* Pseudo instr *)
-  | AstJmpAddr of flag option * reg
+  | AstJmpRegister of flag option * reg
   | AstJmpOffset of flag option * offset
-  | AstJmpImmediate of flag option * program_address
+  | AstJmpAddress of flag option * program_address
   | AstHalt
   (* Functions *)
   | AstCallLabel of label (* Pseudo instr *)

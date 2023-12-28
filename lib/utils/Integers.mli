@@ -99,9 +99,9 @@ module type Address = sig
   val fit_in_uint16 : t -> int -> bool
   (** Checks if the address shifted by an integer fit in a UInt16 integer *)
 
-  val diff : t -> t -> Offset.t
-  (** [diff a1 a2] : computes the offset between the address [a1] and the
-      address [a2]. If not None, the result is such : [a1 + diff a1 a2 = a2] *)
+  val offset_from_to : t -> t -> Offset.t
+  (** [diff a1 a2] : computes the offset [o] between the address [a1] and the
+      address [a2]. The result is such : [a1 + o = a2] *)
 
   val with_offset : t -> Offset.t -> t
   (** [with_offset addr off] returns the address corresponding to [addr + off].

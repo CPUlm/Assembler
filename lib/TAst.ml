@@ -28,9 +28,9 @@ and tinstr_kind =
   | TStore of reg * reg
   (* Flow instructions *)
   | TJmpLabel of flag option * ProgramLabel.t
-  | TJmpAddr of flag option * reg
+  | TJmpRegister of flag option * reg
   | TJmpOffset of flag option * Offset.t pos
-  | TJmpImmediate of flag option * ProgramAddress.t pos
+  | TJmpAddress of flag option * ProgramAddress.t pos
   (* Function Call *)
   | TCallAddr of reg
   | TCallLabel of ProgramLabel.t
