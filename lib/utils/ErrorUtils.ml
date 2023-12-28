@@ -2,18 +2,20 @@
 let fatal_warnings = ref false
 
 let pp_pos ppf (pos : PositionUtils.position) =
-  Format.fprintf ppf "%s:%i-%i:%i-%i" pos.file pos.beg_line pos.end_line
-    pos.beg_col pos.end_col
+  if pos <> PositionUtils.dummy_pos then
+    Format.fprintf ppf "%s:%i-%i:%i-%i" pos.file pos.beg_line pos.end_line
+      pos.beg_col pos.end_col
 
 let pp_error_head ppf (pos : PositionUtils.position) =
-  let begin_col, end_col = (pos.beg_col + 1, pos.end_col + 1) in
-  if pos.beg_line = pos.end_line then
-    Format.fprintf ppf "\x1b[1mFile \"%s\", line %i, characters %i-%i:\x1b[0m"
-      pos.file pos.beg_line begin_col end_col
-  else
-    Format.fprintf ppf
-      "\x1b[1mFile \"%s\", lines %i-%i, characters %i-%i:\x1b[0m" pos.file
-      pos.beg_line pos.end_line begin_col end_col
+  if pos <> PositionUtils.dummy_pos then
+    let begin_col, end_col = (pos.beg_col + 1, pos.end_col + 1) in
+    if pos.beg_line = pos.end_line then
+      Format.fprintf ppf "\x1b[1mFile \"%s\", line %i, characters %i-%i:\x1b[0m"
+        pos.file pos.beg_line begin_col end_col
+    else
+      Format.fprintf ppf
+        "\x1b[1mFile \"%s\", lines %i-%i, characters %i-%i:\x1b[0m" pos.file
+        pos.beg_line pos.end_line begin_col end_col
 
 let pp_severity color ppf severity =
   Format.fprintf ppf "\x1b[1;%sm%s\x1b[0m" color severity

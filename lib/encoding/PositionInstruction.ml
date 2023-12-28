@@ -292,7 +292,7 @@ let position_instrs estim_labels prog =
   in
   ProgramAddress.Map.iter
     (fun addr pos ->
-      if ProgramAddress.is_after addr pprog_next_address then
+      if pprog_next_address < addr && addr < ProgramAddress.last then
         let txt =
           Format.asprintf
             "The address we jump at, %a, is not in the program. The program \

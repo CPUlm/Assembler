@@ -127,7 +127,9 @@ module Offset = struct
 
   let to_int24 t = Int24.of_int t
 
-  let pp ppf t = Format.fprintf ppf "%d" t
+  let pp ppf t =
+    if t < 0 then Format.fprintf ppf "-%#010x" (-t)
+    else Format.fprintf ppf "+%#010x" t
 end
 
 (** Module type of an integer value in the program or the data, ie. a 32bit constant. *)
@@ -216,7 +218,7 @@ module Address = struct
 
   let to_word a = Int32.of_int a
 
-  let pp ppf t = Format.fprintf ppf "%x" t
+  let pp ppf t = Format.fprintf ppf "%#010x" t
 
   (** [is_after a1 a2] checks if [a1] is after [a2] *)
   let is_after a1 a2 = a1 >= a2
