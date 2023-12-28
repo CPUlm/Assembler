@@ -103,10 +103,8 @@ module type Address = sig
   (** [diff a1 a2] : computes the offset [o] between the address [a1] and the
       address [a2]. The result is such : [a1 + o = a2] *)
 
-  val with_offset : t -> Offset.t -> t
-  (** [with_offset addr off] returns the address corresponding to [addr + off].
-      Beware! Some normalisation could occur, the address could be ill-defined.
-      Check with the following method. *)
+  val with_offset : t -> Offset.t -> t option
+  (** [with_offset addr off] returns the address corresponding to [addr + off]. *)
 
   val well_defined : t -> Offset.t -> bool
   (** [with_offset addr off] checks if the address [addr + off] is well-defined. *)

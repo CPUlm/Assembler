@@ -69,9 +69,24 @@ let load_address acc r1 addr r2 =
 
 (** Jump to the offset [ofs]. Jump is performed every time if [f] is [None]
     Otherwise, [f] is the flag used to known if we jump. *)
-let jump_offset acc ofs f =
+let jump_offset acc ofs f pos =
+  let cur_addr = current_address acc in
   (* This is the absolute address we will jump at *)
-  let target_addr = ProgramAddress.with_offset (current_address acc) ofs in
+  let target_addr =
+    match ProgramAddress.with_offset cur_addr ofs with
+    | Some addr ->
+        addr
+    | None ->
+        let txt =
+          Format.asprintf
+            "The address %a shifted by the offset %a is not a well-defined \
+             address. This result does not fall in the valid address range: \
+             [%a; %a]"
+            ProgramAddress.pp cur_addr Offset.pp ofs ProgramAddress.pp
+            ProgramAddress.first ProgramAddress.pp ProgramAddress.last
+        in
+        error txt pos
+  in
   match Offset.to_int24 ofs with
   | Some ofs -> (
     (* We can use the jmpi instruction directly :)
@@ -103,7 +118,7 @@ let setup_stack acc nb_op =
     in
     (* This *should* be safe, if nb_op is not 100000 *)
     let ofs = Option.get ofs in
-    ProgramAddress.with_offset (current_address acc) ofs
+    Option.get (ProgramAddress.with_offset (current_address acc) ofs)
   in
   (* We load [ret_addr] into [PrivateReg] *)
   let acc = load_address acc PrivateReg ret_addr None in
@@ -230,13 +245,13 @@ let position_section labels_pos begin_addr sec =
                     ProgramAddress.pp ProgramAddress.last
                 in
                 warning txt offset.pos ) ;
-            let acc, target_addr = jump_offset acc offset.v f in
+            let acc, target_addr = jump_offset acc offset.v f offset.pos in
             (acc, ProgramAddress.Map.add target_addr offset.pos a2c)
         | TJmpAddress (f, target_addr) ->
             let offset =
               ProgramAddress.offset_from_to (current_address acc) target_addr.v
             in
-            let acc, _ = jump_offset acc offset f in
+            let acc, _ = jump_offset acc offset f target_addr.pos in
             (acc, ProgramAddress.Map.add target_addr.v target_addr.pos a2c)
         | TCallAddr reg ->
             let acc = setup_stack acc 1 in

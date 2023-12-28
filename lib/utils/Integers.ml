@@ -172,7 +172,7 @@ module type Address = sig
 
   val offset_from_to : t -> t -> Offset.t
 
-  val with_offset : t -> Offset.t -> t
+  val with_offset : t -> Offset.t -> t option
 
   val well_defined : t -> Offset.t -> bool
 
@@ -208,21 +208,9 @@ module Address = struct
   (** [offset_from_to a1 a2] returns an offset [o] such as [a1 + o = a2]*)
   let offset_from_to a1 a2 = a2 - a1
 
-  (** Note: The normalization of the address is implementations defined.
-       Here we take the address modulo (first_address - last_address).
-       But other implementations are possibles ! *)
-  let rec normalize_addr addr =
-    if addr < first_address then
-      (* The address too small, we wrap-around to have a (very) large address *)
-      normalize_addr (addr + last_address)
-    else if addr > last_address then
-      (* The address too large, we wrap-around to have a (very) small address *)
-      normalize_addr (addr - last_address)
-    else addr
+  let with_offset addr offs = of_int (addr + offs)
 
-  let with_offset addr offs = normalize_addr (addr + offs)
-
-  let well_defined addr offs = Option.is_some (of_int (addr + offs))
+  let well_defined addr offs = Option.is_some (with_offset addr offs)
 
   let pp ppf t = Format.fprintf ppf "%x" t
 
