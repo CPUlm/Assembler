@@ -41,3 +41,7 @@ val iteri : (int -> 'a -> unit) -> 'a t -> unit
 
 val to_list : 'a t -> 'a list
 (** Convert a monoid to a list, concerve the order. *)
+
+val first : 'a t -> 'a
+(** Return the first element of the monoid.
+   @raise Invalid_argument if the monoid is empty. *)

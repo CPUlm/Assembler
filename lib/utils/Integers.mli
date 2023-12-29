@@ -6,6 +6,8 @@ module type Word = sig
   val add_at : t -> int32 -> int -> t
 
   val to_bytes : t -> bytes
+
+  val pp : Format.formatter -> t -> unit
 end
 
 (** A word in our machine *)
@@ -22,6 +24,8 @@ module type UInt16 = sig
   val of_int32 : int32 -> res
 
   val encode : t -> int32
+
+  val pp : Format.formatter -> t -> unit
 end
 
 (** 16bit unsigned integer *)
@@ -36,6 +40,8 @@ module type Int24 = sig
   val of_int : int -> t option
 
   val encode : t -> int32
+
+  val pp : Format.formatter -> t -> unit
 end
 
 (** 16bit signed integer *)

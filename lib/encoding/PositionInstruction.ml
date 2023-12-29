@@ -44,7 +44,7 @@ let load_label labels_pos acc r1 label r2 =
     | Some pos ->
         (* The label occurs before our label so we have its final position !
            We test if this address can be encoded in a uint16 to test if one
-           load if enougt *)
+           load if enough *)
         ProgramAddress.fit_in_uint16 pos 0
     | None ->
         (* The label occurs after our label, so we look at his position
@@ -172,8 +172,12 @@ let label_jump_kind labels_pos acc label =
     returned by the function [label_jump_kind]. *)
 let jump_label acc label f jump_kind =
   match jump_kind with
-  | None ->
-      add_future acc 1 (FutureJumpOffset (f, label))
+  | None -> (
+    match f with
+    | Some f ->
+        add_future acc 1 (FutureJumpOffsetCond (f, label))
+    | None ->
+        add_future acc 1 (FutureJumpOffset label) )
   | Some i -> (
       let acc = add_future acc i (FuturePLabelLoad (PrivateReg, label, R0)) in
       match f with
@@ -271,7 +275,7 @@ let position_section labels_pos begin_addr sec =
   in
   (next_addr, instrs, addr2check)
 
-let position_instrs estim_labels prog =
+let position_instrs estim_labels tprog =
   let a2c, pprog_label_position, pprog_next_address, pprog_instrs =
     Monoid.fold_left
       (fun (a2c, label_map, curr_addr, p_instrs) sec ->
@@ -288,7 +292,7 @@ let position_instrs estim_labels prog =
       , ProgramLabel.Map.empty
       , ProgramAddress.first
       , Monoid.empty )
-      prog.prog_sections
+      tprog
   in
   ProgramAddress.Map.iter
     (fun addr pos ->
@@ -301,7 +305,4 @@ let position_instrs estim_labels prog =
         in
         warning txt pos )
     a2c ;
-  { pprog_instrs
-  ; pprog_label_mapping= prog.prog_label_mapping
-  ; pprog_label_position
-  ; pprog_next_address }
+  {pprog_instrs; pprog_label_position; pprog_next_address}

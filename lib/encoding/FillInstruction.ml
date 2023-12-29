@@ -20,7 +20,7 @@ let rec pad beg_addr inst res_space =
   else
     let cur_addr, inst = pad beg_addr inst (res_space - 1) in
     let next_addr = next cur_addr in
-    (next_addr, Monoid.(inst @@ Monoid.of_elm (cur_addr, Add (R0, R0, R0))))
+    (next_addr, Monoid.(inst @@ Monoid.of_elm (cur_addr, And (R0, R0, R0))))
 
 let pad beg_addr inst res_space = snd (pad beg_addr inst res_space)
 
@@ -47,23 +47,28 @@ let fill_instruction pprog =
                     [ LoadImmediateAdd (r1, r2, i.low, LowHalf)
                     ; LoadImmediateAdd (r1, r1, i.high, HighHalf) ]
                     finst.res_space )
-          | FutureJumpOffset (flag, lbl) -> (
+          | FutureJumpOffset lbl -> (
               let target_addr =
                 ProgramLabel.Map.find lbl pprog.pprog_label_position
               in
               let ofs = ProgramAddress.offset_from_to addr target_addr in
               match Offset.to_int24 ofs with
-              | Some ofs -> (
-                match flag with
-                | Some f ->
-                    pad addr [JmpImmediateCond (ofs, f)] finst.res_space
-                | None ->
-                    pad addr [JmpImmediate ofs] finst.res_space )
+              | Some ofs ->
+                  pad addr [JmpImmediate ofs] finst.res_space
+              | None ->
+                  failwith "Expected an Int24-compatible offset." )
+          | FutureJumpOffsetCond (flag, lbl) -> (
+              let target_addr =
+                ProgramLabel.Map.find lbl pprog.pprog_label_position
+              in
+              let ofs = ProgramAddress.offset_from_to addr target_addr in
+              match Offset.to_int24 ofs with
+              | Some ofs ->
+                  pad addr [JmpImmediateCond (ofs, flag)] finst.res_space
               | None ->
                   failwith "Expected an Int24-compatible offset." ) ) )
       pprog.pprog_instrs
   in
   { fprog_instrs
-  ; fprog_label_mapping= pprog.pprog_label_mapping
   ; fprog_label_position= pprog.pprog_label_position
   ; fprog_next_address= pprog.pprog_next_address }

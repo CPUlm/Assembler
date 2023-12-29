@@ -108,7 +108,7 @@ type parsed_text =
 
 let rec mk_style_text tc bc sts = function
   | Concat (t1, t2) ->
-      AstConcat (mk_style_text tc bc sts t1, mk_style_text tc bc sts t2)
+      Monoid.(mk_style_text tc bc sts t1 @@ mk_style_text tc bc sts t2)
   | TextColor (col, t) ->
       mk_style_text col bc sts t
   | BackColor (col, t) ->
@@ -118,7 +118,7 @@ let rec mk_style_text tc bc sts = function
   | Style (s, t) ->
       mk_style_text tc bc (StyleSet.add s sts) t
   | Text t ->
-      AstText {text= t; style= sts; text_color= tc; back_color= bc}
+      Monoid.of_elm {text= t; style= sts; text_color= tc; back_color= bc}
 
 let mk_style_text =
   mk_style_text default_text_color default_background_color StyleSet.empty

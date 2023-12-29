@@ -51,7 +51,7 @@ let max_section_end_addr lbl_map start_addr sec =
   in
   let jump_address acc addr =
     (* IN THE WORST CASE POSSIBLE, a jump to an address is made by:
-       - Loadin the address in rpriv *)
+       - Load the address in rpriv *)
     let acc = load_address acc addr in
     (* Jumping to rpriv *)
     atomic_op acc
@@ -130,19 +130,20 @@ let max_section_end_addr lbl_map start_addr sec =
                - add fp sp r0     (mov fp sp)
                - add sp sp r1 *)
             let acc = atomic_op (atomic_op (atomic_op acc)) in
-            (* And now, we jump to the addrres associate to [lbl] *)
+            (* And now, we jump to the address associate to [lbl] *)
             jump_address acc (ProgramLabel.Map.find_opt lbl lbl_map) )
       (0, start_addr) sec.body
   in
   end_addr
 
-let estimate_labels prog =
+let estimate_labels tprog =
   let label_estimation, _ =
     Monoid.fold_left
       (fun (map, curr_pos) sec ->
+        let map = ProgramLabel.Map.add sec.label curr_pos map in
         let end_addr = max_section_end_addr map curr_pos sec in
-        (ProgramLabel.Map.add sec.label end_addr map, end_addr) )
+        (map, end_addr) )
       (ProgramLabel.Map.empty, ProgramAddress.first)
-      prog.prog_sections
+      tprog
   in
   label_estimation
