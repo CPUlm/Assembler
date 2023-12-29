@@ -30,7 +30,19 @@ module type Word = sig
   val add_at : t -> int32 -> int -> t
 
   val to_bytes : t -> bytes
+
+  val pp : Format.formatter -> t -> unit
 end
+
+let int32_to_binary i =
+  let size_of_int32 = 32 in
+  let data = Bytes.create size_of_int32 in
+  for b = 0 to size_of_int32 - 1 do
+    if Int32.(logand i (shift_left one b)) <> 0l then
+      Bytes.set data (size_of_int32 - b - 1) '1'
+    else Bytes.set data (size_of_int32 - b - 1) '0'
+  done ;
+  Bytes.to_string data
 
 module Word = struct
   type t = int32
@@ -42,6 +54,8 @@ module Word = struct
   let to_bytes v =
     let b = Bytes.create 4 in
     Bytes.set_int32_le b 0 v ; b
+
+  let pp ppf x = Format.fprintf ppf "%s" (int32_to_binary x)
 end
 
 (** Module type of unsigned 16bit integers *)
@@ -55,6 +69,8 @@ module type UInt16 = sig
   val of_int32 : int32 -> res
 
   val encode : t -> int32
+
+  val pp : Format.formatter -> t -> unit
 end
 
 module UInt16 = struct
@@ -75,6 +91,8 @@ module UInt16 = struct
       Multiple {low; high}
 
   let encode = Fun.id
+
+  let pp ppf x = Format.fprintf ppf "%#06lx" x
 end
 
 (** Module type of 24bit signed integers *)
@@ -86,6 +104,8 @@ module type Int24 = sig
   val of_int : int -> t option
 
   val encode : t -> int32
+
+  val pp : Format.formatter -> t -> unit
 end
 
 module Int24 = struct
@@ -96,6 +116,8 @@ module Int24 = struct
   let of_int i = if is_int24 i then Some (Int32.of_int i) else None
 
   let encode = Fun.id
+
+  let pp ppf x = Format.fprintf ppf "%+ld" x
 end
 
 (** Module type of an offset in the program *)

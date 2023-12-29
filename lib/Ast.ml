@@ -63,9 +63,7 @@ end)
 
 (** A text constant *)
 type styled_text =
-  | AstText of
-      {text: string; style: StyleSet.t; text_color: color; back_color: color}
-  | AstConcat of styled_text * styled_text
+  {text: string; style: StyleSet.t; text_color: color; back_color: color}
 
 (** All possible instructions *)
 type inst = inst_kind pos
@@ -114,7 +112,7 @@ and inst_kind =
 (** All possible data *)
 type data = data_kind pos
 
-and data_kind = Str of styled_text | Int of immediate
+and data_kind = Str of styled_text Monoid.t | Int of immediate
 
 (** An assembly file, with its data and its text sections. *)
 type file = {text: (label option * inst) list; data: (label option * data) list}

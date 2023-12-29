@@ -21,40 +21,36 @@ let add_section cur_pos sec_label sec_size =
       in
       error txt (DataLabel.position sec_label)
 
-(** [of_text s] : Encode [s] with the encoding scheme.*)
-let rec of_text t =
-  match t with
-  | AstConcat (left, right) ->
-      let left_size, left_str = of_text left in
-      let right_size, right_str = of_text right in
-      (left_size + right_size, Monoid.(left_str @@ right_str))
-  | AstText t ->
-      let text_size, text_bytes =
-        String.fold_left
-          (fun (size, acc) chr ->
-            let word =
-              if chr = '\000' then Word.zero
-              else
-                let code = (0, Word.zero) in
-                (* Compute the ASCII Code of chr *)
-                let code = encode_ascii code chr in
-                (* Add the text color *)
-                let code = encode_color code t.text_color in
-                (* Add the background color *)
-                let code = encode_color code t.back_color in
-                (* Add the text style *)
-                let code = encode_style code t.style in
-                snd code
-            in
-            (size + 1, Monoid.(acc @@ of_elm word)) )
-          (0, Monoid.empty) t.text
-      in
-      (text_size, text_bytes)
+(** [encode_text s] : Encode [s] with the encoding scheme.*)
+let encode_text t =
+  Monoid.fold_left
+    (fun (text_size, text_bytes) t ->
+      String.fold_left
+        (fun (size, acc) chr ->
+          let word =
+            if chr = '\000' then Word.zero
+            else
+              let code = (0, Word.zero) in
+              (* Compute the ASCII Code of chr *)
+              let code = encode_ascii code chr in
+              (* Add the text color *)
+              let code = encode_color code t.text_color in
+              (* Add the background color *)
+              let code = encode_color code t.back_color in
+              (* Add the text style *)
+              let code = encode_style code t.style in
+              snd code
+          in
+          (size + 1, Monoid.(acc @@ of_elm word)) )
+        (text_size, text_bytes) t.text )
+    (0, Monoid.empty) t
+(* in
+   (text_size, text_bytes) *)
 
 (** [process_data data] : Convert the data declaration [data] to a well-formed
        one. *)
 let process_data data =
-  match data.v with Str text -> TString (of_text text) | Int i -> TInt i.v
+  match data.v with Str text -> TString (encode_text text) | Int i -> TInt i.v
 
 let encode_section sec =
   let size, bytes_mon =

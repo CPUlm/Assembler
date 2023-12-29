@@ -76,11 +76,10 @@ let compile_load pos r1 int16 r2 =
       Monoid.of_list (List.map (mk_pos pos) l)
 
 (** [process_instr data_sections prog_labels instr] : Check that the instruction
-       is wellformed and return a siplified version of it, with the program label
+       is well-formed and return a simplified version of it, with the program label
        used if so, and the data label used if so.
 
-       The boolean flag returned with the potentionally used program label, is here
-       to mark if its associated address must be stored in memory. *)
+       The boolean flag returned mark all used label. *)
 let process_instr data_sections prog_labels instr =
   match instr.v with
   | AstNop ->
@@ -243,7 +242,12 @@ let process_instr data_sections prog_labels instr =
         ; (* We jump to the return address. *)
           TJmpRegister (None, PrivateReg) ]
 
-let head_of_program sp_addr fp_addr main_lbl =
+let head_of_program sp_addr fp_addr main_lbl prog_sections =
+  let main_first_label =
+    let first_sec = Monoid.first prog_sections in
+    let first_sec_label, _ = first_sec.v in
+    ProgramLabel.name first_sec_label = "main"
+  in
   (* Load the stack address in SP *)
   let sp_load =
     compile_load dummy_pos SP (MemoryAddress.to_uint16 sp_addr) None
@@ -254,7 +258,12 @@ let head_of_program sp_addr fp_addr main_lbl =
   in
   (* Jump to the label main *)
   let jmp_main =
-    Monoid.of_elm (mk_pos dummy_pos (TJmpLabel (None, main_lbl)))
+    if main_first_label then
+      (* No need to jump if main is right after this. *)
+      Monoid.empty
+    else
+      (* We need to jump here *)
+      Monoid.of_elm (mk_pos dummy_pos (TJmpLabel (None, main_lbl)))
   in
   (* Dummy label corresponding to the head of the program *)
   let label = ProgramLabel.fresh "" dummy_pos in
@@ -305,11 +314,11 @@ let pre_encode_instr data_file f =
   | None ->
       file_warning "No label 'main' found, skipping all instructions." ;
       (data_file, {prog_sections= Monoid.empty; prog_label_mapping= SMap.empty})
-  | Some mainid ->
+  | Some main_id ->
       (* Initialise the stack *)
       let data_file, sp_addr, fp_addr = init_stack data_file in
       (* Header of the program (init SP, FP and PC via a jump) *)
-      let prog_header = head_of_program sp_addr fp_addr mainid in
+      let prog_header = head_of_program sp_addr fp_addr main_id prog_sections in
       let used_prog_lbl, used_mem_lbl, prog_sections =
         Monoid.fold_left
           (fun (pls, dls, acc) instr_sec ->
@@ -346,8 +355,8 @@ let pre_encode_instr data_file f =
           prog_sections
       in
       (* Mark main label as used to avoid useless warnings about it. It it always
-         used implictly as the entry point of the program. *)
-      let used_prog_lbl = ProgramLabel.Set.add mainid used_prog_lbl in
+         used implicitly as the entry point of the program. *)
+      let used_prog_lbl = ProgramLabel.Set.add main_id used_prog_lbl in
       let unused_prog_label =
         SMap.filter
           (fun _ lid -> ProgramLabel.Set.mem lid used_prog_lbl |> not)

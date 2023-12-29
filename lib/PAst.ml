@@ -6,7 +6,8 @@ type future_instr = {res_space: int; op: future_value}
 
 and future_value =
   | FuturePLabelLoad of reg * ProgramLabel.t * reg
-  | FutureJumpOffset of flag option * ProgramLabel.t
+  | FutureJumpOffset of ProgramLabel.t
+  | FutureJumpOffsetCond of flag * ProgramLabel.t
 
 type pprog =
   { pprog_instrs: (ProgramAddress.t * (isa, future_instr) Either.t) Monoid.t
