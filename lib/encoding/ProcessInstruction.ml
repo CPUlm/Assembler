@@ -187,9 +187,10 @@ let process_instr data_sections prog_labels instr =
       in
       match process_load_label data_sections prog_labels label with
       | Left data_lid ->
-          let addr =
-            DataLabel.Map.find data_lid data_sections.data_label_position
+          let data_info =
+            DataLabel.Map.find data_lid data_sections.data_label_info
           in
+          let addr = data_info.address in
           let l = compile_load instr.pos r1 (MemoryAddress.to_uint16 addr) r2 in
           (l, None, Some data_lid)
       | Right lid ->
@@ -313,7 +314,7 @@ let pre_encode_instr data_file f =
   match SMap.find_opt "main" prog_label_mapping with
   | None ->
       file_warning "No label 'main' found, skipping all instructions." ;
-      (data_file, {prog_sections= Monoid.empty; prog_label_mapping= SMap.empty})
+      (data_file, Monoid.empty)
   | Some main_id ->
       (* Initialise the stack *)
       let data_file, sp_addr, fp_addr = init_stack data_file in
@@ -377,4 +378,4 @@ let pre_encode_instr data_file f =
           let txt = Format.asprintf "The data label %s is not used." label in
           warning txt (DataLabel.position lbl_id) )
         unused_mem_label ;
-      (data_file, {prog_sections; prog_label_mapping})
+      (data_file, prog_sections)

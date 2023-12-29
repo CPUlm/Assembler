@@ -9,17 +9,23 @@ open SplitFile
 open EncodingCommon
 
 let add_section cur_pos sec_label sec_size =
-  match MemoryAddress.next cur_pos with
+  let error () =
+    let txt =
+      Format.sprintf
+        "The section '%s' of size %d, is too long to be in a 32bit address \
+         space."
+        (DataLabel.name sec_label) sec_size
+    in
+    error txt (DataLabel.position sec_label)
+  in
+  let ofs =
+    match Offset.of_int sec_size with Some ofs -> ofs | None -> error ()
+  in
+  match MemoryAddress.with_offset cur_pos ofs with
   | Some i ->
       i
   | None ->
-      let txt =
-        Format.sprintf
-          "The section '%s' of size %d, is too long to be in a 32bit address \
-           space."
-          (DataLabel.name sec_label) sec_size
-      in
-      error txt (DataLabel.position sec_label)
+      error ()
 
 (** [encode_text s] : Encode [s] with the encoding scheme.*)
 let encode_text t =
@@ -44,8 +50,6 @@ let encode_text t =
           (size + 1, Monoid.(acc @@ of_elm word)) )
         (text_size, text_bytes) t.text )
     (0, Monoid.empty) t
-(* in
-   (text_size, text_bytes) *)
 
 (** [process_data data] : Convert the data declaration [data] to a well-formed
        one. *)
@@ -78,15 +82,15 @@ let encode_data (f : file) =
         else DataLabel.fresh l.v l.pos )
       f.data
   in
-  let data_next_address, data_bytes, data_label_position =
+  let data_next_address, data_bytes, data_label_info =
     Monoid.fold_left
-      (fun (cur_pos, data, lbl_pos) sec ->
+      (fun (address, data, lbl_pos) sec ->
         let sec_label, sec_insts = sec.v in
-        let sec_size, sec_bytes = encode_section sec_insts in
-        let lbl_pos = DataLabel.Map.add sec_label cur_pos lbl_pos in
-        let cur_pos = add_section cur_pos sec_label sec_size in
-        (cur_pos, Monoid.(data @@ sec_bytes), lbl_pos) )
+        let size, sec_bytes = encode_section sec_insts in
+        let lbl_pos = DataLabel.Map.add sec_label {address; size} lbl_pos in
+        let address = add_section address sec_label size in
+        (address, Monoid.(data @@ sec_bytes), lbl_pos) )
       (MemoryAddress.first, Monoid.empty, DataLabel.Map.empty)
       data_decls
   in
-  {data_bytes; data_label_mapping; data_label_position; data_next_address}
+  {data_bytes; data_label_mapping; data_label_info; data_next_address}

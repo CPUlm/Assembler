@@ -40,8 +40,4 @@ type data = TString of (int * Word.t Monoid.t) | TInt of IntConstant.t
 type instr_section =
   {label: ProgramLabel.t; body: tinstr Monoid.t; pos: position}
 
-type tprog_instr =
-  { prog_sections: instr_section Monoid.t
-  ; prog_label_mapping: ProgramLabel.t SMap.t }
-
 let get_instr i = i.v

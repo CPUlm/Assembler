@@ -136,7 +136,7 @@ let max_section_end_addr lbl_map start_addr sec =
   in
   end_addr
 
-let estimate_labels prog =
+let estimate_labels tprog =
   let label_estimation, _ =
     Monoid.fold_left
       (fun (map, curr_pos) sec ->
@@ -144,6 +144,6 @@ let estimate_labels prog =
         let end_addr = max_section_end_addr map curr_pos sec in
         (map, end_addr) )
       (ProgramLabel.Map.empty, ProgramAddress.first)
-      prog.prog_sections
+      tprog
   in
   label_estimation

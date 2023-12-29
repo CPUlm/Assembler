@@ -2,15 +2,16 @@ open Integers
 open Labels
 open ErrorUtils
 
+type data_label_info = {address: MemoryAddress.t; size: int}
+
 type data_file =
   { data_bytes: Word.t Monoid.t
   ; data_label_mapping: DataLabel.t SMap.t
-  ; data_label_position: MemoryAddress.t DataLabel.map
+  ; data_label_info: data_label_info DataLabel.map
   ; data_next_address: MemoryAddress.t }
 
 type instr_file =
   { instr_bytes: Word.t Monoid.t
-  ; instr_label_mapping: ProgramLabel.t SMap.t
   ; instr_label_position: ProgramAddress.t ProgramLabel.map
   ; instr_next_address: ProgramAddress.t }
 

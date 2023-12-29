@@ -2,6 +2,7 @@ open LibUlmAssembly
 
 type action =
   | ParseOnly
+  | PrintMemMap
   | PrintTProg
   | PrintLblEstimation
   | PrintPProg
@@ -28,6 +29,9 @@ let spec =
     ; ( "--parse-only"
       , Arg.Unit (set_action ParseOnly)
       , "  Stop after parsing and exits." )
+    ; ( "--print-mem-map"
+      , Arg.Unit (set_action PrintMemMap)
+      , "  Print the mapping of the memory on the standard output." )
     ; ( "--print-tprog"
       , Arg.Unit (set_action PrintTProg)
       , "  Print the program on the standard output right after processing \
@@ -80,6 +84,9 @@ let main () =
   let file = Parser.file PostLexer.next_token lexbuf in
   if !action = ParseOnly then () ;
   let data_file = EncodeData.encode_data file in
+  if !action = PrintMemMap then (
+    PrettyPrinter.print_memory_map Format.std_formatter data_file ;
+    exit 1 ) ;
   let data_file, tprog = ProcessInstruction.pre_encode_instr data_file file in
   if !action = PrintTProg then (
     PrettyPrinter.print_tprog Format.std_formatter tprog ;

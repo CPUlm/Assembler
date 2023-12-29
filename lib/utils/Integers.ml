@@ -92,7 +92,7 @@ module UInt16 = struct
 
   let encode = Fun.id
 
-  let pp ppf x = Format.fprintf ppf "%#06lx" x
+  let pp ppf x = Format.fprintf ppf "0x%04lx" x
 end
 
 (** Module type of 24bit signed integers *)
@@ -150,8 +150,8 @@ module Offset = struct
   let to_int24 t = Int24.of_int t
 
   let pp ppf t =
-    if t < 0 then Format.fprintf ppf "-%#010x" (-t)
-    else Format.fprintf ppf "+%#010x" t
+    if t < 0 then Format.fprintf ppf "-0x%08x" (-t)
+    else Format.fprintf ppf "+0x%08x" t
 end
 
 (** Module type of an integer value in the program or the data, ie. a 32bit constant. *)
@@ -240,7 +240,7 @@ module Address = struct
 
   let to_word a = Int32.of_int a
 
-  let pp ppf t = Format.fprintf ppf "%#010x" t
+  let pp ppf t = Format.fprintf ppf "0x%08x" t
 
   (** [is_after a1 a2] checks if [a1] is after [a2] *)
   let is_after a1 a2 = a1 >= a2

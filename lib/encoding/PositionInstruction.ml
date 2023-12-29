@@ -275,7 +275,7 @@ let position_section labels_pos begin_addr sec =
   in
   (next_addr, instrs, addr2check)
 
-let position_instrs estim_labels prog =
+let position_instrs estim_labels tprog =
   let a2c, pprog_label_position, pprog_next_address, pprog_instrs =
     Monoid.fold_left
       (fun (a2c, label_map, curr_addr, p_instrs) sec ->
@@ -292,7 +292,7 @@ let position_instrs estim_labels prog =
       , ProgramLabel.Map.empty
       , ProgramAddress.first
       , Monoid.empty )
-      prog.prog_sections
+      tprog
   in
   ProgramAddress.Map.iter
     (fun addr pos ->
@@ -305,7 +305,4 @@ let position_instrs estim_labels prog =
         in
         warning txt pos )
     a2c ;
-  { pprog_instrs
-  ; pprog_label_mapping= prog.prog_label_mapping
-  ; pprog_label_position
-  ; pprog_next_address }
+  {pprog_instrs; pprog_label_position; pprog_next_address}

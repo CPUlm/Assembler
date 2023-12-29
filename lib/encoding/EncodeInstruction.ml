@@ -96,6 +96,5 @@ let encode_prog fprog =
       fprog.fprog_instrs
   in
   { instr_bytes
-  ; instr_label_mapping= fprog.fprog_label_mapping
   ; instr_label_position= fprog.fprog_label_position
   ; instr_next_address= fprog.fprog_next_address }

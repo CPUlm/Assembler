@@ -70,6 +70,5 @@ let fill_instruction pprog =
       pprog.pprog_instrs
   in
   { fprog_instrs
-  ; fprog_label_mapping= pprog.pprog_label_mapping
   ; fprog_label_position= pprog.pprog_label_position
   ; fprog_next_address= pprog.pprog_next_address }

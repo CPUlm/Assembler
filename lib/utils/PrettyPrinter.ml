@@ -271,11 +271,12 @@ let print_tprog ppf tprog =
       if sec_name <> "" then fprintf ppf "@.%s:@." sec_name ;
       Monoid.iter (fun i -> fprintf ppf "%s%a@." instr_pad pp_tast i.v) sec.body
       )
-    tprog.prog_sections
+    tprog
+
+let colum_sep = String.make 5 ' '
 
 let print_label_estimation ppf e =
-  let label_title = "Labels" in
-  let colum_sep = String.make 5 ' ' in
+  let label_title = "Program Labels" in
   let estim_title = "Estimated Address" in
   let estim_padding_left =
     let space =
@@ -296,7 +297,7 @@ let print_label_estimation ppf e =
     let title_padding =
       String.make (max_label_length - String.length label_title) ' '
     in
-    fprintf ppf "%s%s%s%s@." label_title title_padding colum_sep estim_title
+    fprintf ppf "%s%s %s %s@." label_title title_padding colum_sep estim_title
   in
   ProgramLabel.Map.iter
     (fun lbl addr ->
@@ -306,14 +307,13 @@ let print_label_estimation ppf e =
         let label_padding =
           String.make (max_label_length - String.length name) ' '
         in
-        fprintf ppf "%s%s%s%s%a@." (ProgramLabel.name lbl) label_padding
-          colum_sep estim_padding_left ProgramAddress.pp addr )
+        fprintf ppf "%s%s %s %s%a@." name label_padding colum_sep
+          estim_padding_left ProgramAddress.pp addr )
     e
 
 let print_label_final ppf pprog e =
-  let label_title = "Labels" in
+  let label_title = "Program Labels" in
   let final_title = "Final Address" in
-  let colum_sep = String.make 5 ' ' in
   let final_padding_left, final_padding_right =
     let space =
       assert (String.length final_title > 10) ;
@@ -341,8 +341,8 @@ let print_label_final ppf pprog e =
     let title_padding =
       String.make (max_label_length - String.length label_title) ' '
     in
-    fprintf ppf "%s%s%s%s%s%s@." label_title title_padding colum_sep final_title
-      colum_sep estim_title
+    fprintf ppf "%s%s %s %s %s %s@." label_title title_padding colum_sep
+      final_title colum_sep estim_title
   in
   ProgramLabel.Map.iter
     (fun lbl addr ->
@@ -353,8 +353,60 @@ let print_label_final ppf pprog e =
           String.make (max_label_length - String.length name) ' '
         in
         let estim_addr = ProgramLabel.Map.find lbl e in
-        fprintf ppf "%s%s%s%s%a%s%s%s%a@." (ProgramLabel.name lbl) label_padding
-          colum_sep final_padding_left ProgramAddress.pp addr
-          final_padding_right colum_sep estim_padding_left ProgramAddress.pp
-          estim_addr )
+        fprintf ppf "%s%s %s %s%a%s %s %s%a@." name label_padding colum_sep
+          final_padding_left ProgramAddress.pp addr final_padding_right
+          colum_sep estim_padding_left ProgramAddress.pp estim_addr )
     pprog.pprog_label_position
+
+let print_memory_map ppf data_file =
+  let label_title = "Data Labels" in
+  let address_title = "Memory Address" in
+  let addr_padding_left, addr_padding_right =
+    let space =
+      assert (String.length address_title > 10) ;
+      String.length address_title - 10
+    in
+    (String.make (space / 2) ' ', String.make (space - (space / 2)) ' ')
+  in
+  let size_title = "Size" in
+  let max_label_length =
+    DataLabel.Map.fold
+      (fun lbl _ acc ->
+        let name = DataLabel.name lbl in
+        if String.length name > acc then String.length name else acc )
+      data_file.data_label_info
+      (String.length label_title)
+  in
+  let max_section_size =
+    DataLabel.Map.fold
+      (fun _ info acc ->
+        let size_string_length = String.length (string_of_int info.size) in
+        if size_string_length > acc then size_string_length else acc )
+      data_file.data_label_info (String.length size_title)
+  in
+  let _ =
+    let title_padding =
+      String.make (max_label_length - String.length label_title) ' '
+    in
+    let size_padding =
+      String.make ((max_section_size - String.length size_title) / 2) ' '
+    in
+    fprintf ppf "%s%s %s %s %s %s%s@." label_title title_padding colum_sep
+      address_title colum_sep size_padding size_title
+  in
+  DataLabel.Map.iter
+    (fun lbl info ->
+      let name = DataLabel.name lbl in
+      if name = "" then ()
+      else
+        let label_padding =
+          String.make (max_label_length - String.length name) ' '
+        in
+        let size_str = string_of_int info.size in
+        let size_padding =
+          String.make ((max_section_size - String.length size_str) / 2) ' '
+        in
+        fprintf ppf "%s%s %s %s%a%s %s %s%s@." name label_padding colum_sep
+          addr_padding_left MemoryAddress.pp info.address addr_padding_right
+          colum_sep size_padding size_str )
+    data_file.data_label_info
