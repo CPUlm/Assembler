@@ -1,5 +1,33 @@
 open LibUlmAssembly
 
+let parse_offset ref str =
+  let word_offset =
+    if String.ends_with ~suffix:"kib" str then
+      let i = String.sub str 0 (String.length str - 3) in
+      match int_of_string_opt i with
+      | Some i ->
+          1024 * i / 4
+      | None ->
+          let txt =
+            Format.sprintf
+              "The argument '%s' cannot be interpreted as an memory offset." str
+          in
+          ErrorUtils.file_error txt
+    else
+      match int_of_string_opt str with
+      | Some i ->
+          i
+      | None ->
+          let txt =
+            Format.sprintf
+              "The argument '%s' cannot be interpreted as an memory offset. \
+               Please specify a valid integer."
+              str
+          in
+          ErrorUtils.file_error txt
+  in
+  ref := word_offset
+
 type action =
   | ParseOnly
   | PrintMemMap
@@ -13,16 +41,20 @@ type action =
 
 let action = ref Assemble
 
+let memory_offset = ref 4096
+(* The offset of memory in machine word *)
+
 let set_action act () = action := act
 
 let usage = "usage: asm [options] file.ulm"
 
-let spec =
-  Arg.align
+let rec spec () =
+  Arg.align ~limit:20
     [ (* Disable '-help' because its ugly without the -- *)
       ( "-help"
       , Arg.Unit (fun () -> raise (Arg.Bad "unknown option '-help'"))
       , "" )
+    ; ("--help", Arg.Unit print_help, "")
     ; ( "--fatal-warnings"
       , Arg.Set ErrorUtils.fatal_warnings
       , "  Treats warnings as errors." )
@@ -54,7 +86,20 @@ let spec =
       )
     ; ( "--print-encoded"
       , Arg.Unit (set_action PrintEncoded)
-      , " Print the program on the standard output after being encoded." ) ]
+      , " Print the program on the standard output after being encoded." )
+    ; ( "--memory-offset"
+      , Arg.String (parse_offset memory_offset)
+      , " Specify the offset by which the data segment and the stack is \
+         shifted in memory. See the format section. Default 1024 words \
+         (16kib)." ) ]
+
+and print_help () =
+  Format.printf
+    "%s@.@The following format is accepted for the memory offset:@.\t- \
+     \"ikib\", sets the number of reserved to i bytes or i/4 words. (because \
+     machine word are 32bit)@.\t- an integer i which is directly interpreted \
+     as the number of reserved machine word at the beginning of the memory.@."
+    (Arg.usage_string (spec ()) usage)
 
 let filename =
   let file = ref None in
@@ -63,8 +108,8 @@ let filename =
       raise (Arg.Bad "no .ulm extension") ;
     file := Some s
   in
-  Arg.parse spec set_file usage ;
-  match !file with Some f -> f | None -> Arg.usage spec usage ; exit 1
+  Arg.parse (spec ()) set_file usage ;
+  match !file with Some f -> f | None -> print_help () ; exit 1
 
 let data_filename = Filename.chop_extension filename ^ ".do" (* Data output *)
 
@@ -83,7 +128,7 @@ let lexbuf =
 let main () =
   let file = Parser.file PostLexer.next_token lexbuf in
   if !action = ParseOnly then () ;
-  let data_file = EncodeData.encode_data file in
+  let data_file = EncodeData.encode_data !memory_offset file in
   if !action = PrintMemMap then (
     PrettyPrinter.print_memory_map Format.std_formatter data_file ;
     exit 1 ) ;

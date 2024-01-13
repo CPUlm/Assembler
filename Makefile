@@ -1,6 +1,7 @@
 all: asm
+sources  := $(shell find . -regextype sed -regex "\./\(lib\|bin\)/.*\|\./dune-project")
 
-asm:
+asm: $(sources)
 	@dune build bin/main.exe
 	@cp -f _build/default/bin/main.exe asm
 
@@ -13,5 +14,8 @@ test: asm
 clean:
 	rm -rf _build/ asm
 	cd doc && latexmk -c asm.tex
+
+dev:
+	dune build -w
 
 .PHONY: all clean test asm doc
