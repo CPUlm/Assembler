@@ -1,0 +1,24 @@
+.text
+; Affiche la chaîne $str sur l’écran à partir de la position $beg
+
+
+main:
+    loadi   r3  $beg    ; r3: position at the screen
+    loadi   r4  $str    ; r4: position in the string
+
+loop:
+    load    r5  r4      ; load the character at r4
+    test    r5          ; set the flags of r5
+    jmp.z   $blit_end   ; if null character then exit.
+    store   r3  r5      ; show the character at the screen
+    inc     r3  r3      ; next screen pos
+    inc     r4  r4      ; next character of the string
+    jmp     $loop
+
+blit_end:
+    jmp     $blit_end   ; This is a infinite loop to see the screen
+    halt
+
+.data
+str: .zstring "Hello World"
+beg: .int 10

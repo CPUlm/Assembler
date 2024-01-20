@@ -1,0 +1,4 @@
+.text
+; Test l’arrêt du CPU/Simulateur/VM
+main:
+    halt
