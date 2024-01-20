@@ -237,10 +237,17 @@ particulier :
 La pile est organisée de cette manière lors d'un appel de fonction :
 \input{stack}
 
-Les arguments d'une fonction sont donnés dans les registres \texttt{r20} à \texttt{r28}.
-Les registres de \texttt{r15} à \texttt{r28} sont dits \emph{caller-saved} :
+Les 9 premiers arguments d'une fonction sont donnés dans les registres \texttt{r20} à \texttt{r28}.
+Les autres sont passés sur la pile de la droite vers la gauche. C'est la responsabilité
+de l'appeleur de nettoyer les arguments sur la pile après l'appel.
+
+La valeur de retour de la fonction est passé dans le registre \texttt{rout}. Dans le cas
+d'une structure ou de donnée trop grande, le registre \texttt{rout} contient une adresse
+mémoire vers ces données.
+
+Les registres de \texttt{r15} à \texttt{r28} sont dits \emph{caller-saved} (volatile) :
 une fonction est susceptible d'écraser la valeur de ces registres sans les restaurer.
-Les registres de \texttt{r0} à \texttt{r14} sont dits \emph{callee-saved} :
+Les registres de \texttt{r0} à \texttt{r14} sont dits \emph{callee-saved} (non-volatile) :
 lors de l'appel à une fonction, cette dernière ne doit pas modifier ces registres.
 
 \subsection*{Labels}

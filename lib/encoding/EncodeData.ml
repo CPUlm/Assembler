@@ -70,7 +70,33 @@ let encode_section sec =
   in
   (size, bytes_mon)
 
-let encode_data (f : file) =
+let encode_data offset (f : file) =
+  let first_memory_addr =
+    let offset =
+      match Integers.Offset.of_int offset with
+      | Some ofs ->
+          ofs
+      | None ->
+          let txt =
+            Format.sprintf
+              "The integer '%i' does not represent a valid offset in memory."
+              offset
+          in
+          ErrorUtils.file_error txt
+    in
+    match MemoryAddress.(with_offset first offset) with
+    | Some addr ->
+        addr
+    | None ->
+        let txt =
+          Format.asprintf
+            "The offset for the start of the memory, %a, does not fit in the \
+             memory."
+            Offset.pp offset
+        in
+        file_error txt
+  in
+  let data = List.init offset (fun _ -> Word.zero) |> Monoid.of_list in
   let data_decls, data_label_mapping =
     split_by_label
       (fun l ->
@@ -90,7 +116,7 @@ let encode_data (f : file) =
         let lbl_pos = DataLabel.Map.add sec_label {address; size} lbl_pos in
         let address = add_section address sec_label size in
         (address, Monoid.(data @@ sec_bytes), lbl_pos) )
-      (MemoryAddress.first, Monoid.empty, DataLabel.Map.empty)
+      (first_memory_addr, data, DataLabel.Map.empty)
       data_decls
   in
   {data_bytes; data_label_mapping; data_label_info; data_next_address}
