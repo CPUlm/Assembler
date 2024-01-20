@@ -206,7 +206,7 @@ let process_instr data_sections prog_labels instr =
       return instr (TAdd (r1, r2, R0))
   | AstTest r1 ->
       let r1 = check_readable_register r1 in
-      return instr (TAdd (R0, r1, R0))
+      return instr (TAnd (R0, r1, r1))
   | AstJmpLabel (f, label) ->
       let lid = check_prog_label prog_labels label in
       let m = Monoid.of_elm (mk_pos instr.pos (TJmpLabel (f, lid))) in
