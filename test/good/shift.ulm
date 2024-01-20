@@ -17,6 +17,7 @@ success_a:
     loadi r6 0xffffffe9
     sub r7 r6 r5
     jmp.z $success_b
+    loadi rout 0
     jmp $end
 success_b:
     loadi rout 1
