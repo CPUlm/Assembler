@@ -157,10 +157,11 @@ let process_instr data_sections prog_labels instr =
       return instr (TShiftRightLogical (r1, r2, r3))
   | AstPush r1 ->
       let r1 = check_readable_register r1 in
+      (* The address pointed by SP must always be free. *)
       return_l instr [TStore (SP, r1); TAdd (SP, SP, R1)]
   | AstPop r1 ->
       let r1 = check_writable_reg r1 in
-      return_l instr [TLoad (r1, SP); TSub (SP, SP, R1)]
+      return_l instr [TSub (SP, SP, R1); TLoad (r1, SP)]
   | AstLoad (r1, r2) ->
       let r1 = check_writable_reg r1 in
       let r2 = check_readable_register r2 in
@@ -230,16 +231,10 @@ let process_instr data_sections prog_labels instr =
       (m, Some lid, None)
   | AstRet ->
       return_l instr
-        [ (* We move SP to FP. *)
-          TAdd (SP, FP, R0)
-        ; (* We read the value pointed by SP (old FP) into FP. *)
-          TLoad (FP, SP)
-        ; (* We let SP point to the return address. *)
+        [ (* We restore SP to the original state before the call. *)
           TSub (SP, SP, R1)
         ; (* We read the value pointed by SP (ret address) into [PrivateReg]. *)
           TLoad (PrivateReg, SP)
-        ; (* We restore SP to the original state before the call. *)
-          TSub (SP, SP, R1)
         ; (* We jump to the return address. *)
           TJmpRegister (None, PrivateReg) ]
 
