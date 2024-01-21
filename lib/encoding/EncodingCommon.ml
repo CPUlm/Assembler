@@ -9,43 +9,43 @@ let encode_ascii (pos, v) chr =
   (pos + ascii_size, Word.add_at v (Int32.of_int c) pos)
 
 (** Encode a color *)
-let encode_color (pos, v) col =
+let encode_color (pos, v) (col : Ast.color) =
   let color_size = 5 in
   let c =
     match col with
-    | Black ->
-        0
-    | Red ->
-        1
-    | Green ->
-        2
-    | Yellow ->
-        3
-    | Blue ->
-        4
-    | Magenta ->
-        5
-    | Cyan ->
-        6
-    | White ->
-        7
-    | BrightBlack ->
-        8
-    | BrightRed ->
-        9
-    | BrightGreen ->
-        10
-    | BrightYellow ->
-        11
-    | BrightBlue ->
-        12
-    | BrightMagenta ->
-        13
-    | BrightCyan ->
-        14
-    | BrightWhite ->
-        15
     | Default ->
+        0
+    | Black ->
+        1
+    | Red ->
+        2
+    | Green ->
+        3
+    | Yellow ->
+        4
+    | Blue ->
+        5
+    | Magenta ->
+        6
+    | Cyan ->
+        7
+    | White ->
+        8
+    | BrightBlack ->
+        9
+    | BrightRed ->
+        10
+    | BrightGreen ->
+        11
+    | BrightYellow ->
+        12
+    | BrightBlue ->
+        13
+    | BrightMagenta ->
+        14
+    | BrightCyan ->
+        15
+    | BrightWhite ->
         16
   in
   (pos + color_size, Word.add_at v (Int32.of_int c) pos)
