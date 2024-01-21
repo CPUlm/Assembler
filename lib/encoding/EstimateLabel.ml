@@ -111,11 +111,6 @@ let max_section_end_addr lbl_map start_addr sec =
                - store sp rpriv
                - add sp sp r1 *)
             let acc = atomic_op (atomic_op acc) in
-            (* Push fp to the stack and update it : 3 operations
-               - store sp fp
-               - add fp sp r0     (mov fp sp)
-               - add sp sp r1 *)
-            let acc = atomic_op (atomic_op (atomic_op acc)) in
             (* And now, we can jump to the given register ! *)
             atomic_op acc
         | TCallLabel lbl ->
@@ -125,11 +120,6 @@ let max_section_end_addr lbl_map start_addr sec =
                - store sp rpriv
                - add sp sp r1 *)
             let acc = atomic_op (atomic_op acc) in
-            (* Push fp to the stack and update it : 3 operations
-               - store sp fp
-               - add fp sp r0     (mov fp sp)
-               - add sp sp r1 *)
-            let acc = atomic_op (atomic_op (atomic_op acc)) in
             (* And now, we jump to the address associate to [lbl] *)
             jump_address acc (ProgramLabel.Map.find_opt lbl lbl_map) )
       (0, start_addr) sec.body

@@ -108,7 +108,7 @@ let setup_stack acc nb_op =
   let ret_addr =
     let ofs =
       (* nb of op needed to setup the stack without the load of the return address *)
-      nb_op + 5
+      nb_op + 2
     in
     let ofs =
       if ProgramAddress.fit_in_uint16 (current_address acc) ofs then
@@ -124,12 +124,6 @@ let setup_stack acc nb_op =
   let acc = load_address acc PrivateReg ret_addr None in
   (* And push it to the stack *)
   let acc = add_instr acc (Store (SP, PrivateReg)) in
-  (* Update the stack pointer *)
-  let acc = add_instr acc (Add (SP, SP, R1)) in
-  (* We add the current FP to the stack *)
-  let acc = add_instr acc (Store (SP, FP)) in
-  (* Copy SP into FP *)
-  let acc = add_instr acc (Add (FP, SP, R0)) in
   (* Update the stack pointer *)
   let acc = add_instr acc (Add (SP, SP, R1)) in
   acc
@@ -263,7 +257,7 @@ let position_section labels_pos begin_addr sec =
             (acc, a2c)
         | TCallLabel label ->
             (* The call is performed two stages:
-               - First, we setup the stack (load the return address in the stack, ...)
+               - First, we setup the stack (load the return address in the stack)
                - Second, we jump to the label of the function
                We need to estimate the number of operation needed for the last step. *)
             let nb_op, jump_kind = label_jump_kind labels_pos acc label in
