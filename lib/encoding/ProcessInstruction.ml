@@ -238,7 +238,7 @@ let process_instr data_sections prog_labels instr =
         ; (* We jump to the return address. *)
           TJmpRegister (None, PrivateReg) ]
 
-let head_of_program sp_addr fp_addr main_lbl prog_sections =
+let head_of_program sp_addr main_lbl prog_sections =
   let main_first_label =
     let first_sec = Monoid.first prog_sections in
     let first_sec_label, _ = first_sec.v in
@@ -247,10 +247,6 @@ let head_of_program sp_addr fp_addr main_lbl prog_sections =
   (* Load the stack address in SP *)
   let sp_load =
     compile_load dummy_pos SP (MemoryAddress.to_uint16 sp_addr) None
-  in
-  (* Load the frame address in FP *)
-  let fp_load =
-    compile_load dummy_pos FP (MemoryAddress.to_uint16 fp_addr) None
   in
   (* Jump to the label main *)
   let jmp_main =
@@ -264,30 +260,16 @@ let head_of_program sp_addr fp_addr main_lbl prog_sections =
   (* Dummy label corresponding to the head of the program *)
   let label = ProgramLabel.fresh "" dummy_pos in
   (* Body of this section *)
-  let body = Monoid.(sp_load @@ fp_load @@ jmp_main) in
+  let body = Monoid.(sp_load @@ jmp_main) in
   {label; body; pos= dummy_pos}
 
 let init_stack data_file =
-  let stack = Monoid.of_list [ProgramAddress.(to_word last); Word.zero] in
-  let fp_addr =
-    match MemoryAddress.next data_file.data_next_address with
-    | Some a ->
-        a
-    | None ->
-        file_error "Memory full, unable to setup the stack."
-  in
-  let sp_addr =
-    match MemoryAddress.next fp_addr with
-    | Some a ->
-        a
-    | None ->
-        file_error "Memory full, unable to setup the stack."
-  in
+  let stack = Monoid.of_list [ProgramAddress.(to_word last)] in
+  let sp_addr = data_file.data_next_address in
   ( { data_file with
       data_bytes= Monoid.(data_file.data_bytes @@ stack)
     ; data_next_address= sp_addr }
-  , sp_addr
-  , fp_addr )
+  , sp_addr )
 
 let pre_encode_instr data_file f =
   let prog_sections, prog_label_mapping =
@@ -312,9 +294,9 @@ let pre_encode_instr data_file f =
       (data_file, Monoid.empty)
   | Some main_id ->
       (* Initialise the stack *)
-      let data_file, sp_addr, fp_addr = init_stack data_file in
+      let data_file, sp_addr = init_stack data_file in
       (* Header of the program (init SP, FP and PC via a jump) *)
-      let prog_header = head_of_program sp_addr fp_addr main_id prog_sections in
+      let prog_header = head_of_program sp_addr main_id prog_sections in
       let used_prog_lbl, used_mem_lbl, prog_sections =
         Monoid.fold_left
           (fun (pls, dls, acc) instr_sec ->
