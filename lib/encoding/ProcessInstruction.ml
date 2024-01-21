@@ -265,13 +265,7 @@ let head_of_program sp_addr main_lbl prog_sections =
 
 let init_stack data_file =
   let stack = Monoid.of_list [ProgramAddress.(to_word last)] in
-  let sp_addr =
-    match MemoryAddress.next data_file.data_next_address with
-    | Some a ->
-        a
-    | None ->
-        file_error "Memory full, unable to setup the stack."
-  in
+  let sp_addr = data_file.data_next_address in
   ( { data_file with
       data_bytes= Monoid.(data_file.data_bytes @@ stack)
     ; data_next_address= sp_addr }
