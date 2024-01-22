@@ -124,16 +124,16 @@ data:
 text_section:
   | i=inst s=text_section { (Either.Left i) :: s }
   |                       { [] }
-  | DATA d=data_section   { d }
+  | DATA+ d=data_section   { d }
 
 data_section:
   | i=data s=data_section { (Either.Right i) :: s }
   |                       { [] }
-  | TEXT d=text_section   { d }
+  | TEXT+ d=text_section   { d }
 
 sections:
-  | TEXT s=text_section { s }
-  | DATA s=data_section { s }
+  | TEXT+ s=text_section { s }
+  | DATA+ s=data_section { s }
 
 file:
   | s=sections EOF {
