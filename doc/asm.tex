@@ -22,7 +22,7 @@
 \usepackage{register}
 \usepackage[table]{xcolor}
 
-\usepackage{todonotes}
+% \usepackage{todonotes}
 
 \newcommand{\bitlabel}[2]{%
 \bitbox[]{#1}{%
@@ -215,7 +215,7 @@ On utilise les notations suivantes pour déclarer des données :
 \subsection*{Registres}
 
 L'assembleur possède $31$ registres de travail : de \texttt{r0} à \texttt{r28},
-\texttt{rout}, \texttt{sp}, \texttt{fp}. Les registres suivants ont un sens
+\texttt{rout}, \texttt{sp}, \texttt{fp}, \texttt{rpriv}. Les registres suivants ont un sens
 particulier :
 
 \begin{description}[leftmargin=!, labelwidth=\widthof{\bf \texttt{rout}}]
@@ -224,13 +224,9 @@ particulier :
       \item[\texttt{rout}] est supposé être utilisé afin de stocker la valeur de retour des fonctions.
       \item[\texttt{sp}] a comme valeur la prochaine adresse libre du tas.
       \item[\texttt{fp}] a comme valeur l'adresse du tableau d'activation de la fonction en cours.
+      \item[\texttt{rpriv}] est un registre reservé à l'assembleur ou au compilateur.
+            Un avertissement est lancé lorsque qu'il est utilisé.
 \end{description}
-
-\todo[inline]{
-      Le registre $31$ est réservé à l'assembleur/compilateur.
-      Avertissement dans l'assembleur si utilisé.
-      Nom : \texttt{rpriv}
-}
 
 \subsection*{Convention d'appel}
 
